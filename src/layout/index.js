@@ -1,21 +1,21 @@
 import React from 'react'
 import {Layout, Menu, Breadcrumb, Icon} from 'antd'
-import './layout.css'
 import {menuConfig} from '../route/config'
 import {Link, useLocation} from 'react-router-dom'
-import {ContentRouter, getConfigListByPathname} from '../route'
+import {ContentRouter, getConfigByPathname} from '../route'
+import './layout.css'
 
 const { SubMenu } = Menu;
 const { Header, Content, Footer, Sider } = Layout;
 
 function PageLayout(props) {
   let location = useLocation();
-  const curRouteConfigList = getConfigListByPathname(location.pathname);
+  const curRouteConfigList = getConfigByPathname(location.pathname);
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Sider>
-        <div className="logo" />
-        <Menu theme="dark" defaultSelectedKeys={['0']} mode="inline" style={{marginTop: '64px'}}>
+        <div className="logo">语料库后台管理系统</div>
+        <Menu theme="dark" defaultSelectedKeys={['0']} mode="inline">
           {menuConfig.map((config, index) => {
             if (!config.children) {
               return (

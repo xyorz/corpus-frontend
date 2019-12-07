@@ -27,7 +27,12 @@ let menuConfig = [
     path: '/upload',
     component: pages.Upload,
     title: '文件上传',
-    icon: 'up-circle'
+    icon: 'upload'
+  }, {
+    path: '/download',
+    component: pages.DownLoad,
+    title: '下载使用文档',
+    icon: 'download'
   }
 ];
 
