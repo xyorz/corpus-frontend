@@ -1,6 +1,7 @@
-import React, {useState} from 'react'
+import React from 'react'
 import {Tag} from 'antd'
 import TagWithModal from './TagWithModal'
+import './tags.css'
 
 function Tags(props) {
   const {tags, setTags} = props;
@@ -8,13 +9,15 @@ function Tags(props) {
     setTags(new Set(tags))
   }
   return (
-    <div>
-      {[...tags].map((tag, index) => (
-        <TagWithModal tag={tag} setTag={setTag} key={index} />
-      ))}
-      <Tag>
-        + 新增标签
-      </Tag>
+    <div className="tagsContainer">
+      <div className="tagsBox">
+        {[...tags].map((tag, index) => (
+          <TagWithModal tag={tag} setTag={setTag} key={index} />
+        ))}
+        <Tag>
+          + 
+        </Tag>
+      </div>
     </div>
   )
 }

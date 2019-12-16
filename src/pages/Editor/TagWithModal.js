@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {Tag, Form, Input, Modal, Icon, Select} from 'antd';
+import {Tag, Form, Input, Modal, Select} from 'antd';
 import {CirclePicker} from 'react-color'
 
 const { Option } = Select;
@@ -29,7 +29,7 @@ function TagWithModal(props) {
         color={tag.color}
         onClick={() => setVisible(true)}
       >
-        {tag.name}
+        {tag.author}
       </Tag>
       <Modal
         title="标签编辑"
@@ -43,7 +43,7 @@ function TagWithModal(props) {
           <Form.Item>
             {getFieldDecorator('author', {
               rules: [{ required: true, message: '请输入作者!' }],
-              initialValue: tag.name || ""
+              initialValue: tag.author || ""
             })(
               <Input
                 suffix={<span style={{ color: 'rgba(0,0,0,.25)' }}>作者</span>}
@@ -54,7 +54,7 @@ function TagWithModal(props) {
           <Form.Item>
             {getFieldDecorator('dynasty', {
               rules: [{ required: true, message: '请输入朝代!' }],
-              initialValue: tag.name || ''
+              initialValue: tag.dynasty || ''
             })(
               <Select
                 showSearch
@@ -80,7 +80,7 @@ function TagWithModal(props) {
           <Form.Item>
             {getFieldDecorator('type', {
               rules: [{ required: true, message: '请输入译体!' }],
-              initialValue: tag.name || ''
+              initialValue: tag.type || ''
             })(
               <Select
                 showSearch
@@ -106,7 +106,7 @@ function TagWithModal(props) {
           <Form.Item>
             {getFieldDecorator('area', {
               rules: [{ required: true, message: '请输入地域!' }],
-              initialValue: tag.name || ''
+              initialValue: tag.area || ''
             })(
               <Select
                 showSearch
@@ -132,6 +132,7 @@ function TagWithModal(props) {
           <Form.Item>
             {getFieldDecorator('color', {
               rules: [{ required: true, message: '请选择颜色!' }],
+              initialValue: tag.color || ''
             })(
               <CirclePicker 
                 colors={colors}

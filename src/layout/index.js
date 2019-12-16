@@ -5,11 +5,11 @@ import {Link, useLocation} from 'react-router-dom'
 import {ContentRouter, getConfigByPathname} from '../route'
 import './layout.css'
 
-const { SubMenu } = Menu;
-const { Header, Content, Footer, Sider } = Layout;
+const {SubMenu} = Menu;
+const {Header, Content, Footer, Sider} = Layout;
 
 function PageLayout(props) {
-  let location = useLocation();
+  const location = useLocation();
   const curRouteConfigList = getConfigByPathname(location.pathname);
   return (
     <Layout style={{ minHeight: '100vh' }}>

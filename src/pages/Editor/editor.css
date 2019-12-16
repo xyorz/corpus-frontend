@@ -15,6 +15,23 @@
     word-break: break-all;
 }
 
+.textTitle {
+    text-align: center;
+    font-size: 24px;
+}
+
+.textContent {
+    font-size: 16px;
+    text-indent: 32px;
+}
+
+.cursor {
+    position: absolute;
+    height: 22px;
+    border-left: 1px solid black;
+    transition: .3s;
+}
+
 #contentInput {
     position: absolute;
     width: 60%;

@@ -19,7 +19,14 @@ function useText(initialText) {
     textSlice.forEach((t) => {
       Object.assign(t, meta);
     });
-    setText(text.slice(0, startOffset).concat(textSlice, text.slice(endOffset)));
+    setText(text.slice());
+  }
+  function setTextTag(startOffset, endOffset, tag) {
+    const textSlice = text.slice(startOffset, endOffset);
+    textSlice.forEach((t) => {
+      t.tag = tag;
+    });
+    setText(text.slice());
   }
   return [
     text,
@@ -28,7 +35,8 @@ function useText(initialText) {
       insertText,
       spliceText,
       replaceText,
-      setTextMeta
+      setTextMeta,
+      setTextTag
     }
   ]
 }
