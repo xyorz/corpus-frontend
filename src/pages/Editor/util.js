@@ -1,9 +1,17 @@
 import {useEffect} from 'react';
+import getHashCode from '../../util/hashUtil'
 
-const equalIgnores = ['text', 'hash', 'detail'];
+const equalIgnores = {
+  text: true,
+  meta: {
+    hash: true
+  },
+  zhujie: true,
+  detail: true
+};
 
 function parseText(textJSON) {
-  const textObj = JSON.parse(textJSON);
+  const textObj = typeof textJSON === 'string'? JSON.parse(textJSON): textJSON;
   const textRes = [];
   const tags = [];
   let title = "";
@@ -39,13 +47,20 @@ function parseText(textJSON) {
         tags.push(textObj[i]);
       } // 正文部分
       else{
-        // ?
         textObj[i].text.split('').forEach((t) => {
           textRes.push({
             text: t,
-            tag: curTag
+            tag: curTag,
+            meta: {
+              hash: getHashCode()
+            }
           })
         });
+        const ids = i.split('.').map(id => parseInt(id));
+        ids[2] ++;
+        if (ids.length === 3 && !Object.keys(textObj).includes(ids.join('.'))) {
+          textRes[textRes.length - 1].meta.paraEnd = true;
+        }
       }
     }
   }
@@ -54,6 +69,30 @@ function parseText(textJSON) {
     delete tag.zhujie;
   });
   return [textRes, tags, title];
+}
+
+function generateTextToUpdate(textObj, documentId) {
+  const resObj = {};
+  documentId = documentId? documentId: 0;
+  const idArr = [documentId, 0, 0];
+  const getCurId = () => idArr.join('.');
+  textObj = combineTextObj(textObj);
+  console.log(textObj)
+  // TODO: 文档标题特殊处理
+  textObj.forEach((para) => {
+    idArr[1] ++;
+    idArr[2] = 0;
+    para.forEach((text) => {
+      idArr[2] ++;
+      const curId = getCurId();
+      resObj[curId] = {};
+      resObj[curId].text = text.text;
+      for (let tagKey of Object.keys(text.tag)) {
+        resObj[curId][tagKey] = text.tag[tagKey];
+      }
+    });
+  });
+  return resObj;
 }
 
 function getSelection() {
@@ -173,19 +212,59 @@ function useCursorBlink() {
   })
 }
 
-function textObjEqual(obj1, obj2) {
-  const objKeysSet = new Set(Object.keys(obj1).concat(Object.keys(obj2)));
-  for (let key of objKeysSet) {
-    if (equalIgnores.includes(key)) continue;
-    if (obj1[key] !== obj2[key]) {
-      return false;
+function textObjEqual(textObj1, textObj2) {
+  let flag = true;
+  function objEqual(obj1, obj2, ignores) {
+    if (obj1 && obj2 && typeof obj1 === 'object' && typeof obj2 === 'object') {
+      const keys = new Set(Object.keys(obj1).concat(Object.keys(obj2)));
+      keys.forEach((key) => {
+        if (ignores[key] === true) {
+          return;
+        }
+        if (typeof obj1[key] === 'object') {
+          objEqual(obj1[key], obj2[key] || {}, ignores[key] || {});
+        } else {
+          obj1[key] !== obj2[key] && (flag = false);
+        }
+      });
     }
   }
-  return true;
+  objEqual(textObj1, textObj2, equalIgnores);
+  return flag;
+}
+
+function isSubSign(obj) {
+  // return Object.keys(obj).length === 0;
+  return !!obj.meta.paraEnd;
+}
+
+function combineTextObj(textObj) {
+  let textToRender = [];
+  let curPara = [];
+  let prevT = {};
+  textObj.forEach((t) => {
+    if (textObjEqual(t, prevT)) {
+      prevT.text += t.text;
+    } else {
+      curPara.push(prevT);
+      prevT = Object.assign({}, t);
+    }
+    if (isSubSign(t)) {
+      curPara.push(prevT);
+      curPara = curPara.slice(1);
+      textToRender.push(curPara);
+      curPara = [];
+    }
+  });
+  if (curPara.length > 0) {
+    textToRender.push(curPara);
+  }
+  return textToRender;
 }
 
 export {
   parseText,
+  generateTextToUpdate,
   getSelection,
   getOffset,
   getOffsetInElem,
@@ -193,5 +272,6 @@ export {
   focusInput,
   getPointerPos,
   useCursorBlink,
-  textObjEqual
+  textObjEqual,
+  combineTextObj
 }

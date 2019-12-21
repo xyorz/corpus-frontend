@@ -1,19 +1,20 @@
 import React, {useState, useEffect, useRef} from 'react'
 import {useParams} from 'react-router-dom'
-import useSWR from 'swr'
-import {Spin} from 'antd'
+import {Spin, Button} from 'antd'
 import API from '../../API'
 import Tags from './Tags'
 import TagSelector from './TagSelector'
 import {
   parseText,
+  generateTextToUpdate,
   getSelection, 
   getOffset, 
   getOffsetInElem, 
   focusInput, 
   getPointerPos, 
   useCursorBlink,
-  textObjEqual
+  textObjEqual,
+  combineTextObj
 } from './util'
 import useText from './useText'
 import getHashCode from '../../util/hashUtil'
@@ -67,7 +68,9 @@ function Editor() {
       return {
         text: v,
         tag: tags.keys().next().value,
-        hash: getHashCode()
+        meta: {
+          hash: getHashCode()
+        }
       }
     });
     setOffset({
@@ -99,8 +102,8 @@ function Editor() {
           }
           textAPI.replaceText(offset.startOffset - 1, offset.endOffset, []);
           setOffset({
-            startOffset: offset.startOffset-1,
-            endOffset: offset.startOffset-1
+            startOffset: offset.startOffset - 1,
+            endOffset: offset.startOffset - 1
           })
         } else {
           textAPI.replaceText(offset.startOffset, offset.endOffset, []);
@@ -163,18 +166,6 @@ function Editor() {
   if (loading) {
     return <Spin />
   }
-  let textToRender = [];
-  let prevT = {};
-  text.forEach((t) => {
-    if (textObjEqual(t, prevT)) {
-      prevT.text += t.text;
-    } else {
-      textToRender.push(prevT);
-      prevT = Object.assign({}, t);
-    }
-  })
-  textToRender.push(prevT);
-  textToRender = textToRender.slice(1);
   return (
     <div 
       className="textContainer" 
@@ -185,6 +176,14 @@ function Editor() {
         visible={selectorVisible} 
         setTextTag={setSelectedTextTag}
       />
+      <div>
+        <Button 
+          className="confirmBtn"
+          onClick={() => console.log(generateTextToUpdate(text, textId))}
+        >
+          提交
+        </Button>
+      </div>
       <div
         className="textBox"
         onInput={(e) => {console.log("onInput", e)}}
@@ -198,6 +197,7 @@ function Editor() {
         }}
         onMouseUp={(e) => {
           const newOffset = getOffset();
+          console.log(newOffset)
           textAPI.setTextMeta(newOffset.startOffset, newOffset.endOffset, {selected: true});
           setOffset(newOffset); 
           selection.removeAllRanges();
@@ -214,15 +214,19 @@ function Editor() {
         <div className="textTitle">{textTitle}</div>
         <Tags tags={tags} setTags={setTags} />
         <div className="textContent">
-          {textToRender.map((t, index) => (
-            <span 
-              key={t.hash}
-              style={t.selected? Object.assign({color: t.tag.color}, selectedTextStyle): {color: t.tag.color}}
-              className={`text`}
-            >
-              {t.cursor && <span className="cursor"></span>}
-              {t.text}
-            </span>
+          {combineTextObj(text).map((para, index) => (
+            <div key={index}>
+              {para.map((t) => (
+                <span 
+                key={t.meta.hash}
+                style={t.meta.selected? Object.assign({color: t.tag.color}, selectedTextStyle): {color: t.tag.color}}
+                className={`text`}
+              >
+                {t.meta.cursor && <span className="cursor"></span>}
+                {t.text}
+              </span>
+              ))}
+            </div>
           ))}
         </div>
       </div>

@@ -17,7 +17,7 @@ function useText(initialText) {
   function setTextMeta(startOffset, endOffset, meta) {
     const textSlice = text.slice(startOffset, endOffset);
     textSlice.forEach((t) => {
-      Object.assign(t, meta);
+      Object.assign(t.meta, meta);
     });
     setText(text.slice());
   }
