@@ -1,0 +1,1 @@
+export const PUSH_DOC_INFO_LIST = 'PUSH_DOC_INFO_LIST'

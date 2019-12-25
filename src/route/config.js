@@ -39,12 +39,19 @@ let menuConfig = [
 // 其他路由
 let otherConfig = [
   {
-    path: '/editor/:textId',
+    path: '/editor/local/:localId',
     component: pages.Editor,
     title: '文本编辑',
     icon: 'scan',
     exact: true
-  }
+  },
+  {
+    path: '/editor/remote/:remoteId',
+    component: pages.Editor,
+    title: '文本编辑',
+    icon: 'scan',
+    exact: true
+  },
 ]
 
 export { 

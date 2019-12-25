@@ -68,7 +68,12 @@ function parseText(textJSON) {
     delete tag.text; 
     delete tag.zhujie;
   });
-  return [textRes, tags, title];
+  // return [textRes, tags, title];
+  return {
+    text: textRes,
+    tags,
+    title
+  }
 }
 
 function generateTextToUpdate(textObj, documentId) {

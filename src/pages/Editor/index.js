@@ -1,6 +1,7 @@
 import React, {useState, useEffect, useRef} from 'react'
 import {useParams} from 'react-router-dom'
 import {Spin, Button} from 'antd'
+import {useSelector} from 'react-redux'
 import API from '../../API'
 import Tags from './Tags'
 import TagSelector from './TagSelector'
@@ -26,7 +27,8 @@ const selectedTextStyle = {
 }
 
 function Editor() {
-  const {textId} = useParams();
+  const {remoteId, localId} = useParams();
+  const localDocInfo = useSelector(state => state.storedDocInfoList[localId]);
   const [loading, setLoading] = useState(false);
   const [textTitle, setTextTitle] = useState('');
   const [text, textAPI] = useText();
@@ -42,19 +44,23 @@ function Editor() {
     }).catch((e) => {
       // TODO: handle error
     });
-    if (textId) {
-      API.post('/corpus/doc/', {id: textId}).then((data) => {
-        const [textRes, tagsRes, titleRes] = parseText(data.data.doc);
-        const tagsToAdd = tagsRes.filter((resTag) => {
+    if (remoteId) {
+      API.post('/corpus/doc/', {id: remoteId}).then((data) => {
+        const parseResult = parseText(data.data.doc);
+        const tagsToAdd = parseResult.tags.filter((resTag) => {
           return !tags.some((tag) => textObjEqual(resTag, tag));
         });
         setTags(tags.concat(tagsToAdd));
-        textAPI.insertText(0, textRes);
-        setTextTitle(titleRes);
+        textAPI.insertText(0, parseResult.text);
+        setTextTitle(parseResult.title);
       }).catch((e) => {
         // TODO: handle error
         console.log(e)
       })
+    } else if (localDocInfo) {
+      setTags(localDocInfo.tags);
+      setTextTitle(localDocInfo.title);
+      textAPI.insertText(0, localDocInfo.text);
     }
   }, []);
   const selection = getSelection();
@@ -179,7 +185,7 @@ function Editor() {
       <div>
         <Button 
           className="confirmBtn"
-          onClick={() => console.log(generateTextToUpdate(text, textId))}
+          onClick={() => console.log(generateTextToUpdate(text, remoteId))}
         >
           提交
         </Button>

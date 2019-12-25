@@ -2,9 +2,11 @@ import React, {useState, useEffect} from 'react'
 import {Table, Button, message, Modal, Spin} from 'antd'
 import {Link} from 'react-router-dom'
 import API from '../../API'
-import {parseFile, cc} from './util'
+import {parseFile} from './util'
 import {parseText} from '../Editor/util'
 import FileDragger from './FileDragger'
+import {useDispatch} from 'react-redux'
+import {PUSH_DOC_INFO_LIST} from '../../redux/actionTypes'
 
 const columns = [
   {
@@ -27,23 +29,27 @@ const columns = [
 ]
 
 function Upload(props) {
-  const [textList, setTextList] = useState([]);
-  const [tagList, setTagList] = useState([]);
+  // const [textList, setTextList] = useState([]);
+  // const [tagList, setTagList] = useState([]);
   const [dataSource, setDataSource] = useState([]);
+  const dispatch = useDispatch();
   function handleFileSelect(file) {
     parseFile(file).then((resObj) => {
-      const res = parseText(resObj);
-      textList.push(res[0]);
-      tagList.push(res[1]);
-      setTextList(textList.slice());
-      setTagList(tagList.slice());
-
+      const parseResult = parseText(resObj);
+      // textList.push(parseResult[0]);
+      // tagList.push(parseResult[1]);
+      // setTextList(textList.slice());
+      // setTagList(tagList.slice());
+      dispatch({
+        type: PUSH_DOC_INFO_LIST,
+        payload: parseResult
+      });
       dataSource.push({
         id: dataSource.length + 1,
-        document: res[2],
+        document: parseResult.title,
         action: (
           <>
-            <Link to={`/editor/${dataSource.length + 1}`}>
+            <Link to={`/editor/local/${dataSource.length}`}>
               <Button>修改</Button>
             </Link>
             <Button style={{marginLeft: '10px'}}>删除</Button>
