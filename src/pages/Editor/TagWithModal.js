@@ -29,7 +29,7 @@ function TagWithModal(props) {
         color={tag.color}
         onClick={() => setVisible(true)}
       >
-        {tag.author}
+        {tag.author || '未编辑'}
       </Tag>
       <Modal
         title="标签编辑"

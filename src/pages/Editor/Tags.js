@@ -6,10 +6,10 @@ import './tags.css'
 function Tags(props) {
   const {tags, setTags} = props;
   function setTag() {
-    setTags(new Set(tags))
+    setTags(new Set(tags));
   }
   return (
-    <div className="tagsContainer">
+    <div className={'tagsContainer' + ' ' + props.className || ''}>
       <div className="tagsBox">
         {[...tags].map((tag, index) => (
           <TagWithModal tag={tag} setTag={setTag} key={index} />

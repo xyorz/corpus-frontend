@@ -6,7 +6,7 @@ function FileDragger(props) {
   const [loading, setLoading] = useState(false);
 
   return (
-    <div>
+    <div style={props.style} className={props.className}>
       <Dragger
         onChange={props.onSelectFile}
         beforeUpload={() => false}

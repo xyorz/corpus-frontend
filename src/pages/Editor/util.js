@@ -16,7 +16,6 @@ function parseText(textJSON) {
   const tags = [];
   let title = "";
   let curTag = null;
-  console.log(textObj)
   // 排序
   let sortedKeys = Object.keys(textObj).sort((a, b) => {
     const [a1, a2, a3] = [...a.split('.').map((e) => parseInt(e)), 0, 0];
@@ -82,7 +81,6 @@ function generateTextToUpdate(textObj, documentId) {
   const idArr = [documentId, 0, 0];
   const getCurId = () => idArr.join('.');
   textObj = combineTextObj(textObj);
-  console.log(textObj)
   // TODO: 文档标题特殊处理
   textObj.forEach((para) => {
     idArr[1] ++;
@@ -184,15 +182,20 @@ function setRangeStart(offset) {
   range.setStart(child, off);
 }
 
-function focusInput() {
+function focusInput(event) {
   const input = document.getElementById("contentInput");
+  if (event) {
+    const position = getPointerPos(event);
+    input.style.top = position.top + 'px';
+  }
   input.focus();
 }
 
 function getPointerPos(event) {
+  const scrollTop = document.body.scrollTop || document.documentElement.scrollTop;
   return {
-    top: event.clientY,
-    left: event.clientX 
+    top: event.clientY + scrollTop,
+    left: event.clientX
   }
 }
 
@@ -267,6 +270,17 @@ function combineTextObj(textObj) {
   return textToRender;
 }
 
+function combineTagsByColor(tags) {
+  tags.forEach((tag) => {
+    tag.color && (tag.color = tag.color.toUpperCase());
+  });
+  const tagsEdited = tags.filter((tag) => tag.author);
+  const tagsUnedited = tags.filter((tag) => !tag.author);
+  return tagsEdited.concat(tagsUnedited.filter((tu) => (
+    !tagsEdited.some((te) => te.color === tu.color)
+  )));
+}
+
 export {
   parseText,
   generateTextToUpdate,
@@ -278,5 +292,6 @@ export {
   getPointerPos,
   useCursorBlink,
   textObjEqual,
-  combineTextObj
+  combineTextObj,
+  combineTagsByColor
 }

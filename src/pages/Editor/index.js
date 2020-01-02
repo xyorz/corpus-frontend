@@ -1,6 +1,6 @@
 import React, {useState, useEffect, useRef} from 'react'
-import {useParams} from 'react-router-dom'
-import {Spin, Button} from 'antd'
+import {useParams, useHistory} from 'react-router-dom'
+import {Spin, Button, message} from 'antd'
 import {useSelector} from 'react-redux'
 import API from '../../API'
 import Tags from './Tags'
@@ -15,7 +15,8 @@ import {
   getPointerPos, 
   useCursorBlink,
   textObjEqual,
-  combineTextObj
+  combineTextObj,
+  combineTagsByColor
 } from './util'
 import useText from './useText'
 import getHashCode from '../../util/hashUtil'
@@ -28,6 +29,7 @@ const selectedTextStyle = {
 
 function Editor() {
   const {remoteId, localId} = useParams();
+  const history = useHistory();
   const localDocInfo = useSelector(state => state.storedDocInfoList[localId]);
   const [loading, setLoading] = useState(false);
   const [textTitle, setTextTitle] = useState('');
@@ -40,28 +42,29 @@ function Editor() {
   const inputRef = useRef(null);
   useEffect(() => {
     API.post('/corpus/authors_info/').then((data) => {
-      setTags(data.data.list);
+      let initialTags = data.data.list;
+      if (remoteId) {
+        API.post('/corpus/doc/', {id: remoteId}).then((data) => {
+          const parseResult = parseText(data.data.doc);
+          const tagsToAdd = parseResult.tags.filter((resTag) => {
+            return !tags.some((tag) => textObjEqual(resTag, tag));
+          });
+          initialTags = initialTags.concat(tagsToAdd);
+          textAPI.insertText(0, parseResult.text);
+          setTextTitle(parseResult.title);
+        }).catch((e) => {
+          // TODO: handle error
+          console.log(e)
+        })
+      } else if (localDocInfo) {
+        initialTags = combineTagsByColor(initialTags.concat(localDocInfo.tags));
+        setTextTitle(localDocInfo.title);
+        textAPI.insertText(0, localDocInfo.text);
+      }
+      setTags(initialTags);
     }).catch((e) => {
       // TODO: handle error
     });
-    if (remoteId) {
-      API.post('/corpus/doc/', {id: remoteId}).then((data) => {
-        const parseResult = parseText(data.data.doc);
-        const tagsToAdd = parseResult.tags.filter((resTag) => {
-          return !tags.some((tag) => textObjEqual(resTag, tag));
-        });
-        setTags(tags.concat(tagsToAdd));
-        textAPI.insertText(0, parseResult.text);
-        setTextTitle(parseResult.title);
-      }).catch((e) => {
-        // TODO: handle error
-        console.log(e)
-      })
-    } else if (localDocInfo) {
-      setTags(localDocInfo.tags);
-      setTextTitle(localDocInfo.title);
-      textAPI.insertText(0, localDocInfo.text);
-    }
   }, []);
   const selection = getSelection();
   useCursorBlink();
@@ -168,7 +171,18 @@ function Editor() {
         event.preventDefault();
     }
   }
-  // 渲染
+  const commitText = () => {
+    if (remoteId || !localId) {
+      API.post('/corpus/insert/', {...generateTextToUpdate(text, remoteId)})
+        .then(() => {
+          message.success('修改成功');
+          history.push('/manage');
+        });
+    } else {
+      // TODO: 处理本地上传文件
+    }
+  }
+  // 加载中
   if (loading) {
     return <Spin />
   }
@@ -185,7 +199,7 @@ function Editor() {
       <div>
         <Button 
           className="confirmBtn"
-          onClick={() => console.log(generateTextToUpdate(text, remoteId))}
+          onClick={commitText}
         >
           提交
         </Button>
@@ -207,7 +221,7 @@ function Editor() {
           textAPI.setTextMeta(newOffset.startOffset, newOffset.endOffset, {selected: true});
           setOffset(newOffset); 
           selection.removeAllRanges();
-          focusInput();
+          focusInput(e);
           setPointerPos(getPointerPos(e));
           setSelectorVisible(newOffset.startOffset !== newOffset.endOffset);
           // 鼠标位置
