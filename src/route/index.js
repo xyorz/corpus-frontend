@@ -1,6 +1,9 @@
 import React from 'react'
-import {HashRouter, Route, Redirect} from 'react-router-dom'
+import {HashRouter, Route, Redirect, withRouter} from 'react-router-dom'
+import NotLiveRoute from 'react-live-route'
 import {menuConfig, otherConfig} from './config'
+
+const LiveRoute = withRouter(NotLiveRoute)
 
 let createRouter = (config) => (props) => {
   return (
@@ -16,11 +19,12 @@ function RouterConfig(props) {
   return (
     <>
       {config && config.map((route) => (
-        <Route 
+        <LiveRoute 
           key={route.path}
           exact={route.exact}
           path={route.path}
           component={route.component} 
+          alwaysLive={route.keepAlive}
           render={
             () => <RouterConfig config={route.children} />
           }

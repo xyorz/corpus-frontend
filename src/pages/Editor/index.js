@@ -1,7 +1,7 @@
 import React, {useState, useEffect, useRef} from 'react'
-import {useParams, useHistory} from 'react-router-dom'
+import {useHistory} from 'react-router-dom'
 import {Spin, Button, message} from 'antd'
-import {useSelector} from 'react-redux'
+import {useSelector, useDispatch} from 'react-redux'
 import API from '../../API'
 import Tags from './Tags'
 import TagSelector from './TagSelector'
@@ -19,7 +19,8 @@ import {
   combineTagsByColor
 } from './util'
 import useText from './useText'
-import getHashCode from '../../util/hashUtil'
+import {getHashCode, getUrlParams} from '../../util'
+import {SET_DOC_INFO_LIST} from '../../redux/actionTypes'
 import './editor.css'
 
 const selectedTextStyle = {
@@ -28,9 +29,15 @@ const selectedTextStyle = {
 }
 
 function Editor() {
-  const {remoteId, localId} = useParams();
   const history = useHistory();
+  const urlParams = getUrlParams([0, 1]);
+  const [remoteId, localId] = (() => 
+    (urlParams[1] === 'local'
+      ? [null, urlParams[0]]
+      : [urlParams[0], null]
+  ))()
   const localDocInfo = useSelector(state => state.storedDocInfoList[localId]);
+  const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
   const [textTitle, setTextTitle] = useState('');
   const [text, textAPI] = useText();
@@ -40,6 +47,7 @@ function Editor() {
   const [pointerPos, setPointerPos] = useState({top: 0, left: 0});
   const [selectorVisible, setSelectorVisible] = useState(false);
   const inputRef = useRef(null);
+
   useEffect(() => {
     API.post('/corpus/authors_info/').then((data) => {
       let initialTags = data.data.list;
@@ -57,8 +65,14 @@ function Editor() {
           console.log(e)
         })
       } else if (localDocInfo) {
-        initialTags = combineTagsByColor(initialTags.concat(localDocInfo.tags));
+        initialTags = combineTagsByColor(initialTags, localDocInfo.tags);
+        console.log(initialTags)
         setTextTitle(localDocInfo.title);
+        // fix tag pointer
+        localDocInfo.text.forEach(t => {
+          const newTag = initialTags.filter(it => it.color.toUpperCase() === t.tag.color.toUpperCase())[0];
+          t.tag = newTag;
+        })
         textAPI.insertText(0, localDocInfo.text);
       }
       setTags(initialTags);
@@ -173,13 +187,24 @@ function Editor() {
   }
   const commitText = () => {
     if (remoteId || !localId) {
-      API.post('/corpus/insert/', {...generateTextToUpdate(text, remoteId)})
+      API.post('/corpus/insert/', {...generateTextToUpdate(text, textTitle, remoteId)})
         .then(() => {
           message.success('修改成功');
           history.push('/manage');
         });
     } else {
       // TODO: 处理本地上传文件
+      const parseResult = parseText(generateTextToUpdate(text, textTitle, localId));
+      console.log(generateTextToUpdate(text, localId))
+      dispatch({
+        type: SET_DOC_INFO_LIST,
+        payload: {
+          index: localId,
+          docInfo: parseResult
+        }
+      });
+      message.success('修改成功');
+      history.push('/upload');
     }
   }
   // 加载中

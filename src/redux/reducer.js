@@ -13,13 +13,13 @@ export default (state = defaultState, action) => {
       state.storedDocInfoList.push(action.payload);
       return {
         ...state
-      }
+      };
     case SET_DOC_INFO_LIST:
       const {index, docInfo} = action.payload;
       state.storedDocInfoList[index] = docInfo;
       return {
         ...state
-      }
+      };
     default: 
       return state;
   }

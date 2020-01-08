@@ -1,14 +1,14 @@
-import React, {useState, useEffect} from 'react'
+import React, {useState, useEffect, useRef} from 'react'
 import {Table, Button, message, Modal, Spin} from 'antd'
 import {Link} from 'react-router-dom'
 import API from '../../API'
 import {parseFile} from './util'
-import {parseText} from '../Editor/util'
+import {parseText, generateTextToUpdate} from '../Editor/util'
 import FileDragger from './FileDragger'
 import Tags from '../Editor/Tags'
 import TagWithModal from '../Editor/TagWithModal'
-import {useDispatch} from 'react-redux'
-import {PUSH_DOC_INFO_LIST} from '../../redux/actionTypes'
+import {useDispatch, useSelector} from 'react-redux'
+import {PUSH_DOC_INFO_LIST, SET_DOC_INFO_LIST} from '../../redux/actionTypes'
 import './upload.css'
 
 const columns = [
@@ -27,7 +27,7 @@ const columns = [
   }, {
     align: 'center',
     title: '未定义标签',
-    dataIndex: 'undefinedTags'
+    dataIndex: 'tagsRender'
   }
 ];
 
@@ -58,10 +58,11 @@ const maskDisableStyle = {
 }
 
 function Upload(props) {
-  const [dataSource, setDataSource] = useState([]);
   const dispatch = useDispatch();
+  const storedDocInfoList = useSelector(state => state.storedDocInfoList, () => false);
   const [globalTags, setGlobalTags] = useState([]);
   const [enableGlobalTags, setEnableGlobalTags] = useState(false);
+
   useEffect(() => {
     API.post('/corpus/authors_info/').then((data) => {
       setGlobalTags(data.data.list);
@@ -69,6 +70,46 @@ function Upload(props) {
       // TODO: handle error
     });
   }, []);
+
+  let dataSource = [];
+  const setTag = () => {
+    dispatch({
+      type: SET_DOC_INFO_LIST,
+      payload: {
+        index: 0,
+        docInfo: storedDocInfoList[0]
+      }
+    })
+  };
+  storedDocInfoList.forEach((docInfo, index) => {
+    dataSource.push({
+      id: index,
+      document: docInfo.title,
+      action: (
+        <>
+          <Link to={`/editor/local/${index}`}>
+            <Button>修改</Button>
+          </Link>
+          <Button style={{marginLeft: '10px'}}>删除</Button>
+        </>
+      ),
+      tagsInfo: docInfo.tags,
+      tagsRender: (
+        <>
+          {docInfo.tags.reduce((tagRenderList, tag, index) => {
+            const tagRender = <TagWithModal tag={tag} setTag={setTag} key={index} />;
+            if (enableGlobalTags && globalTags.some((gt) => {
+              return gt.color.toUpperCase() === tag.color.toUpperCase();
+            })) {
+              return tagRenderList;
+            }
+            return tagRenderList.concat(tagRender)
+          }, [])}
+        </>
+      )
+    })
+  });
+
   function handleFileSelect(file) {
     parseFile(file).then((resObj) => {
       const parseResult = parseText(resObj);
@@ -76,38 +117,42 @@ function Upload(props) {
         type: PUSH_DOC_INFO_LIST,
         payload: parseResult
       });
-      console.log(parseResult)
-      dataSource.push({
-        id: dataSource.length + 1,
-        document: parseResult.title,
-        action: (
-          <>
-            <Link to={`/editor/local/${dataSource.length}`}>
-              <Button>修改</Button>
-            </Link>
-            <Button style={{marginLeft: '10px'}}>删除</Button>
-          </>
-        ),
-        undefinedTags: (
-          <>
-            {parseResult.tags.map((tag) => {
-              const setTag = () => {
-                setDataSource([...dataSource]);
-                dispatch({
-                  type: PUSH_DOC_INFO_LIST,
-                  payload: parseResult
-                });
-              }
-              return <TagWithModal tag={tag} setTag={setTag} />
-            })}
-          </>
-        ),
-      });
-      setDataSource(dataSource.slice());
     })
   }
   function changeEnableGlobalTags() {
     setEnableGlobalTags(enableGlobalTags? false: true);
+    dispatch({
+      type: SET_DOC_INFO_LIST,
+      payload: {
+        index: 0,
+        docInfo: storedDocInfoList[0]
+      }
+    })
+  }
+  function handleSubmit() {
+    console.log(storedDocInfoList);
+    for (let docInfo of storedDocInfoList) {
+      for (let tagIndex in docInfo.tags) {
+        let tag = docInfo.tags[tagIndex];
+        if (!tag.author) {
+          // 尝试从全局标签找
+          if (enableGlobalTags) {
+            const matchTag = globalTags.find(t => t.color.toUpperCase() === tag.color.toUpperCase());
+            if (matchTag) {
+              console.log(21)
+              docInfo.tags[tagIndex] = matchTag;
+            } else {
+              message.warn('请编辑所有标签');
+              return;
+            }
+          } else {
+            message.warn('请编辑所有标签');
+            return;
+          }
+        }
+      }
+    }
+    // TODO: 批量调接口插入
   }
  
   return (
@@ -143,7 +188,12 @@ function Upload(props) {
         dataSource={dataSource} 
         rowKey={(data) => data.id} 
       />
-      <Button style={{position: 'relative', left: '90%', marginTop: '10px'}}>提交</Button>
+      <Button 
+        style={{position: 'relative', left: '90%', marginTop: '10px'}}
+        onClick={handleSubmit}
+      >
+        提交
+      </Button>
     </div>
   )
 }

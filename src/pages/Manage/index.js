@@ -1,5 +1,4 @@
-import React from 'react'
-import useSWR from 'swr'
+import React, {useState, useEffect} from 'react'
 import {Table, Button, message, Modal, Spin} from 'antd'
 import {Link} from 'react-router-dom'
 import API from '../../API'
@@ -21,11 +20,15 @@ const columns = [
 ]
 
 function Manage(props) {
-  const {data} = useSWR('/corpus/manage', API.get);
-  if (!data) {
+  const [dataSource, setDataSource] = useState([]);
+  useEffect(() => {
+    API.post('/corpus/manage/').then((data) => {
+      setDataSource(data.data.list)
+    }
+  )});
+  if (!dataSource) {
     return <Spin />
   } else {
-    const dataSource = data.data.list;
     dataSource.forEach((data) => {
       data.action = (
         <>
@@ -37,7 +40,7 @@ function Manage(props) {
       )
     })
     return (
-      <Table columns={columns} dataSource={data.data.list} rowKey={(data) => data.id} />
+      <Table columns={columns} dataSource={dataSource} rowKey={(data) => data.id} />
     )
   }
 }

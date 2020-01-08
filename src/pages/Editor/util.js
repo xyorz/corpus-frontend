@@ -35,7 +35,7 @@ function parseText(textJSON) {
     }
     else{
       if(!tags.some((tag) => textObjEqual(tag, textObj[i]) && (curTag = tag))) {
-        if(textObj[i]['detail']){
+        if(textObj[i]['detail'] && typeof textObj[i]['detail'] === 'string'){
           textObj[i]['detail'] = JSON.parse(textObj[i]['detail']);
         }
         tags.push(textObj[i]);
@@ -75,13 +75,12 @@ function parseText(textJSON) {
   }
 }
 
-function generateTextToUpdate(textObj, documentId) {
+function generateTextToUpdate(textObj, title = '', documentId = 0) {
   const resObj = {};
-  documentId = documentId? documentId: 0;
   const idArr = [documentId, 0, 0];
   const getCurId = () => idArr.join('.');
   textObj = combineTextObj(textObj);
-  // TODO: 文档标题特殊处理
+  console.log(textObj)
   textObj.forEach((para) => {
     idArr[1] ++;
     idArr[2] = 0;
@@ -95,6 +94,7 @@ function generateTextToUpdate(textObj, documentId) {
       }
     });
   });
+  resObj[documentId] = {document: title};
   return resObj;
 }
 
@@ -270,15 +270,25 @@ function combineTextObj(textObj) {
   return textToRender;
 }
 
-function combineTagsByColor(tags) {
-  tags.forEach((tag) => {
+function combineTagsByColor(tags1, tags2) {
+  tags1 = [...tags1];
+  tags2 = [...tags2];
+  tags1.forEach((tag) => {
     tag.color && (tag.color = tag.color.toUpperCase());
   });
-  const tagsEdited = tags.filter((tag) => tag.author);
-  const tagsUnedited = tags.filter((tag) => !tag.author);
-  return tagsEdited.concat(tagsUnedited.filter((tu) => (
-    !tagsEdited.some((te) => te.color === tu.color)
-  )));
+  tags2.forEach((tag) => {
+    tag.color && (tag.color = tag.color.toUpperCase());
+  });
+  for(let i2 in tags2) {
+    if (!tags2[i2].author) {
+      for(let i1 in tags1) {
+        if (tags2[i2].color === tags1[i1].color) {
+          tags2[i2] = tags1[i1]
+        }
+      }
+    }
+  }
+  return tags2;
 }
 
 export {

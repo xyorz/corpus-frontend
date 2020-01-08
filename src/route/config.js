@@ -8,7 +8,7 @@ let menuConfig = [
     title: '文档管理',
     icon: 'copy'
   }, {
-    path: '/editor',
+    path: '/editor/local/-1',
     component: pages.Editor,
     title: '文本编辑',
     icon: 'scan',
@@ -27,7 +27,8 @@ let menuConfig = [
     path: '/upload',
     component: pages.Upload,
     title: '文件上传',
-    icon: 'upload'
+    icon: 'upload',
+    keepAlive: true
   }, {
     path: '/download',
     component: pages.DownLoad,
