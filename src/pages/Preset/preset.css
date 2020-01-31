@@ -1,12 +1,47 @@
 .presetContainer {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.inputGroupContainer {
   display: flex;
   justify-content: center;
   align-items: center;
+  flex-direction: column;
 }
 
 .tabs {
   width: 60%;
   border: 1px solid gray;
-
 }
 
+.tabInputContainer {
+  width: 40%;
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.tabInput {
+  width: 100%;
+  margin-top: 15px;
+}
+
+.tabInputIcon {
+  position: absolute;
+  right: 10px;
+  font-size: 1.5em;
+  line-height: 3.2em;
+  color: gray;
+  cursor: pointer;
+}
+
+.button {
+  width: 40%;
+  margin-top: 15px;
+}
+
+.submit {
+  margin-bottom: 15px;
+}

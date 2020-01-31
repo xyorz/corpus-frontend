@@ -1,8 +1,9 @@
 import React from 'react'
-import {Layout, Menu, Breadcrumb, Icon} from 'antd'
+import {Layout, Menu, Breadcrumb, Icon, message} from 'antd'
 import {menuConfig} from '../route/config'
-import {Link, useLocation} from 'react-router-dom'
+import {Link, useLocation, useHistory} from 'react-router-dom'
 import {ContentRouter, getConfigByPathname} from '../route'
+import API from '../API'
 import './layout.css'
 
 const {SubMenu} = Menu;
@@ -10,7 +11,17 @@ const {Header, Content, Footer, Sider} = Layout;
 
 function PageLayout(props) {
   const location = useLocation();
+  const history = useHistory();
   const curRouteConfigList = getConfigByPathname(location.pathname);
+  function logOut() {
+    API.post('/corpus/logout/')
+      .then((res) => {
+        if (res.data.success) {
+          message.success('登出成功');
+          history.push('/login');
+        }
+      })
+  }
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Sider>
@@ -58,7 +69,7 @@ function PageLayout(props) {
             mode="horizontal"
             style={{ lineHeight: '64px', display: 'flex', justifyContent: 'flex-end' }}
           >
-            <Menu.Item>RootManager</Menu.Item>
+            <Menu.Item onClick={logOut}>RootManager</Menu.Item>
           </Menu>
         </Header>
         <Content style={{ margin: '0 16px' }}>

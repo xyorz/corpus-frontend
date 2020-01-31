@@ -1,7 +1,7 @@
 import React from 'react'
-import {HashRouter, Route, Redirect, withRouter} from 'react-router-dom'
+import {HashRouter, Route, Switch, Redirect, withRouter} from 'react-router-dom'
 import NotLiveRoute from 'react-live-route'
-import {menuConfig, otherConfig} from './config'
+import {menuConfig, otherConfig, mainConfig} from './config'
 
 const LiveRoute = withRouter(NotLiveRoute)
 
@@ -30,10 +30,25 @@ function RouterConfig(props) {
           }
         />
       ))}
-      <Redirect from="/*" to="/manage" />
+      {/* <Redirect from="/app/*" to="/app/manage" /> */}
     </>
   )
 }
+
+const createMainRouter = (config) => () => (
+  <HashRouter>
+    <Switch>
+      {config && config.map((route, index) => (
+        <Route 
+          key={index}
+          exact
+          path={route.path}
+          component={route.component} 
+        />
+      ))}
+    </Switch>
+  </HashRouter>
+)
 
 // 根据path找路由配置，返回从父到子的路由列表
 const getConfigByPathname = (config) => (pathName) => {
@@ -61,7 +76,7 @@ const getConfigByPathname = (config) => (pathName) => {
 }
 
 const ContentRouter = createRouter(menuConfig.concat(otherConfig));
-const MainRouter = createRouter();
+const MainRouter = createMainRouter(mainConfig);
 const getMenuConfigByPathname = getConfigByPathname(menuConfig);
 
 export {

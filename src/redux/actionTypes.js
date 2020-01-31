@@ -1,2 +1,3 @@
 export const PUSH_DOC_INFO_LIST = 'PUSH_DOC_INFO_LIST'
 export const SET_DOC_INFO_LIST = 'SET_DOC_INFO_LIST'
+export const DEL_DOC_INFO_LIST = 'DEL_DOC_INFO_LIST'

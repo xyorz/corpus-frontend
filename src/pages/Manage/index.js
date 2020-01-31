@@ -25,14 +25,14 @@ function Manage(props) {
     API.post('/corpus/manage/').then((data) => {
       setDataSource(data.data.list)
     }
-  )});
+  )}, []);
   if (!dataSource) {
     return <Spin />
   } else {
     dataSource.forEach((data) => {
       data.action = (
         <>
-          <Link to={`/editor/remote/${data.id}`}>
+          <Link to={`/app/editor/remote/${data.id}`}>
             <Button>修改</Button>
           </Link>
           <Button style={{marginLeft: '10px'}}>删除</Button>

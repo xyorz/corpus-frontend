@@ -4,6 +4,7 @@ import Manage from './Manage'
 import Preset from './Preset'
 import Upload from './Upload'
 import DownLoad from './Download'
+import Login from '../auth/login'
 
 export default {
   Editor,
@@ -11,5 +12,6 @@ export default {
   Manage,
   Preset,
   Upload,
-  DownLoad
+  DownLoad,
+  Login
 }

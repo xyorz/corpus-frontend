@@ -190,7 +190,7 @@ function Editor() {
       API.post('/corpus/insert/', {...generateTextToUpdate(text, textTitle, remoteId)})
         .then(() => {
           message.success('修改成功');
-          history.push('/manage');
+          history.push('/app/manage');
         });
     } else {
       // TODO: 处理本地上传文件
@@ -204,7 +204,7 @@ function Editor() {
         }
       });
       message.success('修改成功');
-      history.push('/upload');
+      history.push('/app/upload');
     }
   }
   // 加载中

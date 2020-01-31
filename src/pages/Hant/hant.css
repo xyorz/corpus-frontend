@@ -2,4 +2,36 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  margin-top: 20px;
+}
+
+.hantButton {
+  align-self: flex-end;
+  margin-top: 30px;
+}
+
+.hantNew {
+  margin-top: 20px;
+  width: 100%;
+}
+
+.hantContainer {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.hantBox {
+  width: 30%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.hantSearchBox {
+  width: 40%;
+  margin-bottom: 40px;
 }

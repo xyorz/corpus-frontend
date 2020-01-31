@@ -1,6 +1,6 @@
 import React, {useState, useEffect, useRef} from 'react'
 import {Table, Button, message, Modal, Spin} from 'antd'
-import {Link} from 'react-router-dom'
+import {Link, useHistory} from 'react-router-dom'
 import API from '../../API'
 import {parseFile} from './util'
 import {parseText, generateTextToUpdate} from '../Editor/util'
@@ -8,7 +8,7 @@ import FileDragger from './FileDragger'
 import Tags from '../Editor/Tags'
 import TagWithModal from '../Editor/TagWithModal'
 import {useDispatch, useSelector} from 'react-redux'
-import {PUSH_DOC_INFO_LIST, SET_DOC_INFO_LIST} from '../../redux/actionTypes'
+import {PUSH_DOC_INFO_LIST, SET_DOC_INFO_LIST, DEL_DOC_INFO_LIST} from '../../redux/actionTypes'
 import './upload.css'
 
 const columns = [
@@ -59,6 +59,7 @@ const maskDisableStyle = {
 
 function Upload(props) {
   const dispatch = useDispatch();
+  const history = useHistory();
   const storedDocInfoList = useSelector(state => state.storedDocInfoList, () => false);
   const [globalTags, setGlobalTags] = useState([]);
   const [enableGlobalTags, setEnableGlobalTags] = useState(false);
@@ -87,10 +88,10 @@ function Upload(props) {
       document: docInfo.title,
       action: (
         <>
-          <Link to={`/editor/local/${index}`}>
+          <Link to={`/app/editor/local/${index}`}>
             <Button>修改</Button>
           </Link>
-          <Button style={{marginLeft: '10px'}}>删除</Button>
+          <Button style={{marginLeft: '10px'}} onClick={handleDelete(index)}>删除</Button>
         </>
       ),
       tagsInfo: docInfo.tags,
@@ -121,17 +122,20 @@ function Upload(props) {
   }
   function changeEnableGlobalTags() {
     setEnableGlobalTags(enableGlobalTags? false: true);
-    dispatch({
-      type: SET_DOC_INFO_LIST,
-      payload: {
-        index: 0,
-        docInfo: storedDocInfoList[0]
-      }
-    })
+    if (storedDocInfoList[0]) {
+      dispatch({
+        type: SET_DOC_INFO_LIST,
+        payload: {
+          index: 0,
+          docInfo: storedDocInfoList[0]
+        }
+      })
+    }
   }
   function handleSubmit() {
     console.log(storedDocInfoList);
-    for (let docInfo of storedDocInfoList) {
+    const docInfoList = storedDocInfoList.slice();
+    for (let docInfo of docInfoList) {
       for (let tagIndex in docInfo.tags) {
         let tag = docInfo.tags[tagIndex];
         if (!tag.author) {
@@ -139,20 +143,43 @@ function Upload(props) {
           if (enableGlobalTags) {
             const matchTag = globalTags.find(t => t.color.toUpperCase() === tag.color.toUpperCase());
             if (matchTag) {
-              console.log(21)
-              docInfo.tags[tagIndex] = matchTag;
+              for(let key in matchTag) {
+                docInfo.tags[tagIndex][key] = matchTag[key]
+              }
+              delete docInfo.tags[tagIndex].preset;
+              delete docInfo.tags[tagIndex].id;
             } else {
-              message.warn('请编辑所有标签');
+              message.warn('请编辑所有标签1');
               return;
             }
           } else {
-            message.warn('请编辑所有标签');
+            message.warn('请编辑所有标签2');
             return;
           }
         }
       }
     }
     // TODO: 批量调接口插入
+    const requestList = [];
+    docInfoList.forEach(docInfo => {
+      const parseResult = generateTextToUpdate(docInfo.text, docInfo.title, 0);
+      requestList.push(API.post('/corpus/insert/', parseResult));
+      console.log(parseResult)
+    });
+    Promise.all(requestList).then(() => {
+      message.success('上传成功!');
+      history.push('/app/manage');
+    })
+  }
+
+  function handleDelete(index) {
+    return () => {
+      dispatch({
+        type: DEL_DOC_INFO_LIST,
+        payload: index
+      });
+      message.success('删除成功');
+    }
   }
  
   return (

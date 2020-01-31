@@ -1,0 +1,31 @@
+.loginContainer {
+  display: flex;
+  height: 100vh;
+  justify-content: center;
+  align-items: center;
+}
+
+.loginTitle {
+  font-size: 24px;
+  text-align: center;
+}
+
+.login-form {
+  border: 1px solid rgba(160, 160, 160, .5);
+  border-radius: 5px;
+  padding: 35px 50px 0 50px !important;
+}
+
+.login-form-button {
+  float: right;
+}
+
+#components-form-demo-normal-login .login-form {
+  max-width: 300px;
+}
+#components-form-demo-normal-login .login-form-forgot {
+  float: right;
+}
+#components-form-demo-normal-login .login-form-button {
+  width: 100%;
+}
