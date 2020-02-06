@@ -12,11 +12,13 @@ import {
   getOffset, 
   getOffsetInElem, 
   focusInput, 
+  paraStartOrEnd,
   getPointerPos, 
   useCursorBlink,
   textObjEqual,
   combineTextObj,
-  combineTagsByColor
+  combineTagsByColor,
+  parsePasteText
 } from './util'
 import useText from './useText'
 import {getHashCode, getUrlParams} from '../../util'
@@ -57,7 +59,7 @@ function Editor() {
           const tagsToAdd = parseResult.tags.filter((resTag) => {
             return !tags.some((tag) => textObjEqual(resTag, tag));
           });
-          initialTags = initialTags.concat(tagsToAdd);
+          initialTags = [...initialTags].concat(tagsToAdd);
           textAPI.insertText(0, parseResult.text);
           setTextTitle(parseResult.title);
         }).catch((e) => {
@@ -66,7 +68,6 @@ function Editor() {
         })
       } else if (localDocInfo) {
         initialTags = combineTagsByColor(initialTags, localDocInfo.tags);
-        console.log(initialTags)
         setTextTitle(localDocInfo.title);
         // fix tag pointer
         localDocInfo.text.forEach(t => {
@@ -75,6 +76,7 @@ function Editor() {
         })
         textAPI.insertText(0, localDocInfo.text);
       }
+      initialTags = new Set(initialTags); 
       setTags(initialTags);
     }).catch((e) => {
       // TODO: handle error
@@ -96,10 +98,22 @@ function Editor() {
         }
       }
     });
+    // 空文章
+    if (text.length === 0) {
+      textObject[textObject.length - 1].meta.paraEnd = true;
+      offset.startOrEnd = 'end';
+    }
     setOffset({
       startOffset: offset.startOffset + value.length,
-      endOffset: offset.startOffset + value.length
+      endOffset: offset.startOffset + value.length,
+      startOrEnd: offset.startOrEnd
     });
+    if (offset.startOrEnd) {
+      if (offset.startOrEnd === 'end') {
+        textAPI.setTextMeta(offset.startOffset - 1, offset.startOffset, {paraEnd: false});
+        textObject[textObject.length - 1].meta.paraEnd = true;
+      }
+    }
     textAPI.replaceText(offset.startOffset, offset.endOffset, textObject);
     inputRef.current.value = '';
   }
@@ -183,6 +197,7 @@ function Editor() {
         break;
       case 'ArrowDown':
         event.preventDefault();
+        break;
     }
   }
   const commitText = () => {
@@ -195,7 +210,6 @@ function Editor() {
     } else {
       // TODO: 处理本地上传文件
       const parseResult = parseText(generateTextToUpdate(text, textTitle, localId));
-      console.log(generateTextToUpdate(text, localId))
       dispatch({
         type: SET_DOC_INFO_LIST,
         payload: {
@@ -211,6 +225,7 @@ function Editor() {
   if (loading) {
     return <Spin />
   }
+  const textCombine = combineTextObj(text);
   return (
     <div 
       className="textContainer" 
@@ -241,8 +256,14 @@ function Editor() {
           textAPI.setTextMeta(offset.startOffset, offset.endOffset+1, {cursor: false});
         }}
         onMouseUp={(e) => {
+          let target = e.target;
+          while(target && target.getAttribute('class') !== 'textBox') {
+            target = target.parentElement;
+          }
+          if (!target) {
+            return;
+          }
           const newOffset = getOffset();
-          console.log(newOffset)
           textAPI.setTextMeta(newOffset.startOffset, newOffset.endOffset, {selected: true});
           setOffset(newOffset); 
           selection.removeAllRanges();
@@ -254,22 +275,22 @@ function Editor() {
             textAPI.setTextMeta(newOffset.startOffset, newOffset.endOffset+1, {cursor: true});
           }
         }}
-        onFocus={(e) => console.log("focus")}
       >
         <div className="textTitle">{textTitle}</div>
         <Tags tags={tags} setTags={setTags} />
         <div className="textContent">
-          {combineTextObj(text).map((para, index) => (
-            <div key={index}>
+          {textCombine.map((para, index) => (
+            <div key={index} className="para">
               {para.map((t) => (
-                <span 
-                key={t.meta.hash}
-                style={t.meta.selected? Object.assign({color: t.tag.color}, selectedTextStyle): {color: t.tag.color}}
-                className={`text`}
-              >
-                {t.meta.cursor && <span className="cursor"></span>}
-                {t.text}
-              </span>
+                <React.Fragment key={t.meta.hash}>  
+                  {t.meta.cursor && offset.startOrEnd !== 'end' && <span className="cursor"></span>}
+                  <span 
+                    style={t.meta.selected? Object.assign({color: t.tag.color}, selectedTextStyle): {color: t.tag.color}}
+                    className={`text`}
+                  >
+                    {t.text}
+                  </span>
+                </React.Fragment>
               ))}
             </div>
           ))}
@@ -289,6 +310,49 @@ function Editor() {
           handleValueInput(e.data)
         }}
         onCompositionStart={(e) => setUsingIME(true)}
+        onPaste={(e) => {
+          const pasteText = parsePasteText(e);
+          const resText = [];
+          const color2Tag = {};
+
+          for(let t of pasteText) {
+            if (color2Tag[t.tagColor.toUpperCase()]) {
+              t.tag = color2Tag[t.tagColor.toUpperCase()];
+            } else {
+              for(let tag of tags) {
+                if(tag.color && tag.color.toUpperCase() === t.tagColor.toUpperCase()) {
+                  t.tag = tag;
+                  color2Tag[tag.color.toUpperCase()] = tag;
+                  break;
+                }
+              }
+              if (!t.tag) {
+                const tag = {
+                  author: '',
+                  color: t.tagColor
+                };
+                tags.add(tag);
+                setTags(new Set(tags));
+                t.tag = tag;
+              }
+            }
+            for (let i in t.text) {
+              resText.push({
+                text: t.text[i],
+                tag: t.tag,
+                meta: {
+                  hash: getHashCode(),
+                  paraEnd: t.meta.paraEnd && parseInt(i) === t.text.length - 1
+                }
+              });
+            }
+          }
+          textAPI.insertText(offset.startOffset, resText);
+          setOffset({
+            startOffset: offset.startOffset + resText.length,
+            endOffset: offset.startOffset + resText.length
+          })
+        }}
       />
     </div>
   )

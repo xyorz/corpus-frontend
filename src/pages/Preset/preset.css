@@ -25,15 +25,15 @@
 
 .tabInput {
   width: 100%;
-  margin-top: 15px;
+  margin-top: 15px !important;
 }
 
 .tabInputIcon {
   position: absolute;
   right: 10px;
-  font-size: 1.5em;
-  line-height: 3.2em;
-  color: gray;
+  font-size: 1.5em !important;
+  line-height: 3.2em !important;
+  color: gray !important;
   cursor: pointer;
 }
 

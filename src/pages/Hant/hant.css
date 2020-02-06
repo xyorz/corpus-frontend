@@ -32,6 +32,6 @@
 }
 
 .hantSearchBox {
-  width: 40%;
+  width: 40% !important;
   margin-bottom: 40px;
 }

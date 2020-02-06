@@ -1,27 +1,40 @@
 import React, {useState} from 'react';
 import {Tag, Form, Input, Modal, Select} from 'antd';
 import {CirclePicker} from 'react-color'
+import {defaultTag} from '../../util/config'
 
 const { Option } = Select;
 
-const colors = ["#f44336", "#e91e63", "#9c27b0", "#3f51b5", "#2196f3", "#009688", "#4caf50", "#8bc34a", "#cddc39", "#ffeb3b", "#ffc107", "#ff5722", "#795548", "#607d8b"]
+const colors = ["#f44336", "#e91e63", "#9c27b0", "#3f51b5", "#2196f3", "#009688", "#4caf50", "#8bc34a", "#cddc39", "#ffeb3b", "#ffc107", "#ff5722", "#795548", "#607d8b"];
+let defaultInitial = {};
+console.log('defaultTag:', defaultTag)
+for(let key in defaultTag) {
+  defaultInitial[key] = [];
+}
+defaultInitial.color = colors;
+console.log(defaultInitial)
 
 function TagWithModal(props) {
   const [visible, setVisible] = useState(false);
   const {tag, setTag, form} = props
+  const initial = props.initial || defaultInitial;
   const {getFieldDecorator, setFieldsValue, getFieldValue} = form;
   function handleSubmit() {
     form.validateFields((err, values) => {
       if (!err) {
         values.color = values.color.hex;
         Object.assign(tag, values);
-        setTag();
+        setTag(tag);
         setVisible(false);
       }
     })
   }
   function handleCancel() {
     setVisible(false);
+  }
+  initial.color = initial.color.map((c) => c.toUpperCase());
+  if (tag.color && !initial.color.includes(tag.color.toUpperCase())) {
+    initial.color.push(tag.color.toUpperCase());
   }
   return (
     <>
@@ -71,9 +84,9 @@ function TagWithModal(props) {
                   option.props.children.indexOf(input) >= 0
                 }
               >
-                <Option value="先秦">先秦</Option>
-                <Option value="西汉">西汉</Option>
-                <Option value="战国">战国</Option>
+                {initial.dynasty.map((item, index) => (
+                  <Option value={item} key={index}>{item}</Option>
+                ))}
               </Select>
             )}
           </Form.Item>
@@ -97,9 +110,9 @@ function TagWithModal(props) {
                   option.props.children.indexOf(input) >= 0
                 }
               >
-                <Option value="原文">原文</Option>
-                <Option value="注解">注解</Option>
-                <Option value="义疏">义疏</Option>
+                {initial.type.map((item, index) => (
+                  <Option value={item} key={index}>{item}</Option>
+                ))}
               </Select>
             )}
           </Form.Item>
@@ -123,9 +136,9 @@ function TagWithModal(props) {
                   option.props.children.indexOf(input) >= 0
                 }
               >
-                <Option value="原文">原文</Option>
-                <Option value="注解">注解</Option>
-                <Option value="义疏">义疏</Option>
+                {initial.area.map((item, index) => (
+                  <Option value={item} key={index}>{item}</Option>
+                ))}
               </Select>
             )}
           </Form.Item>
@@ -135,7 +148,7 @@ function TagWithModal(props) {
               initialValue: tag.color || ''
             })(
               <CirclePicker 
-                colors={colors}
+                colors={initial.color}
                 color={getFieldValue('color')}
                 circleSize={26.4}
                 onChange={(e) => setFieldsValue({color: e.hex})}

@@ -80,7 +80,6 @@ function generateTextToUpdate(textObj, title = '', documentId = 0) {
   const idArr = [documentId, 0, 0];
   const getCurId = () => idArr.join('.');
   textObj = combineTextObj(textObj);
-  console.log(textObj)
   textObj.forEach((para) => {
     idArr[1] ++;
     idArr[2] = 0;
@@ -133,7 +132,27 @@ function getOffset() {
   })
   return {
     startOffset: Math.min(anchorOffset, focusOffset),
-    endOffset: Math.max(anchorOffset, focusOffset)
+    endOffset: Math.max(anchorOffset, focusOffset),
+    startOrEnd: paraStartOrEnd()
+  }
+}
+
+function paraStartOrEnd() {
+  const {anchorNode, focusNode, anchorOffset, focusOffset} =  window.getSelection();
+  if (anchorNode !== focusNode || anchorOffset !== focusOffset) {
+    return false;
+  }
+  let currentSpan = anchorNode;
+  while (currentSpan && (!currentSpan.getAttribute || currentSpan.getAttribute('class') !== 'text')) {
+    currentSpan = currentSpan.parentElement;
+  }
+  if (!currentSpan) {
+    return false;
+  }
+  if (!currentSpan.nextSibling && anchorNode.textContent.length === anchorOffset) {
+    return 'end'
+  } else if (!currentSpan.previousSibling && anchorOffset === 0) {
+    return 'start'
   }
 }
 
@@ -291,6 +310,39 @@ function combineTagsByColor(tags1, tags2) {
   return tags2;
 }
 
+const parsePasteText = (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  let paste = (e.clipboardData || window.clipboardData).getData('text/html');
+
+  paste = paste.replace(/[\n\r]/g, ' ');
+  /<body.*?>(.*?)<\/body>/.test(paste);
+  let div = document.createElement('div');
+  div.innerHTML = RegExp.$1;
+
+  const resArr = [];
+  for(let para of div.childNodes) {
+    if (!para.querySelector) {
+      continue;
+    }
+    for (let span of para.querySelectorAll('[style]')) {
+      const text = span.textContent;
+      const textColor = span.style.color;
+      if (text && text.trim()) {
+        resArr.push({
+          text: text,
+          tagColor: textColor || '#000000',
+          meta: {
+          //   hash: getHashCode()
+          }
+        })
+      }
+    }
+    resArr.length > 0 && (resArr[resArr.length-1].meta.paraEnd = true);
+  }
+  return resArr;
+}
+
 export {
   parseText,
   generateTextToUpdate,
@@ -299,9 +351,11 @@ export {
   getOffsetInElem,
   setRangeStart,
   focusInput,
+  paraStartOrEnd,
   getPointerPos,
   useCursorBlink,
   textObjEqual,
   combineTextObj,
-  combineTagsByColor
+  combineTagsByColor,
+  parsePasteText
 }

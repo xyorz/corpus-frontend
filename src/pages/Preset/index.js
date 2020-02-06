@@ -11,7 +11,6 @@ const presetTypes = ['area', 'color', 'dynasty', 'type'];
 function Preset(props) {
   const [tags, setTags] = useState(new Set());
   const [presets, setPresets] = useState({});
-  const mockValues = ['111', '222', '333'];
   useEffect(() => {
     API.post('/corpus/authors_info/')
       .then((data) => {
@@ -20,7 +19,6 @@ function Preset(props) {
         return API.post('/corpus/get_preset/')
       })
       .then((data) => {
-        console.log('presets', data.data.list)
         const list = data.data.list;
         const result = {};
         list.forEach((item) => {
