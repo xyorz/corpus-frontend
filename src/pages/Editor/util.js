@@ -1,14 +1,13 @@
-import {useEffect} from 'react';
+import {useEffect} from 'react'
 import getHashCode from '../../util/hashUtil'
+import {tagItems} from '../../util/config'
 
-const equalIgnores = {
-  text: true,
+const eqItems = {
+  tag: true,
   meta: {
-    hash: true
-  },
-  zhujie: true,
-  detail: true
-};
+    paraEnd: true
+  }
+}
 
 function parseText(textJSON) {
   const textObj = typeof textJSON === 'string'? JSON.parse(textJSON): textJSON;
@@ -16,6 +15,12 @@ function parseText(textJSON) {
   const tags = [];
   let title = "";
   let curTag = null;
+  const tagEq = (tag1, tag2) => {
+    for (let item of tagItems) {
+      if (tag1[item] !== tag2[item]) return false;
+    }
+    return true;
+  }
   // 排序
   let sortedKeys = Object.keys(textObj).sort((a, b) => {
     const [a1, a2, a3] = [...a.split('.').map((e) => parseInt(e)), 0, 0];
@@ -34,7 +39,7 @@ function parseText(textJSON) {
       title = title.split('.')[0];
     }
     else{
-      if(!tags.some((tag) => textObjEqual(tag, textObj[i]) && (curTag = tag))) {
+      if(!tags.some((tag) => tagEq(tag, textObj[i]) && (curTag = tag))) {
         if(textObj[i]['detail'] && typeof textObj[i]['detail'] === 'string'){
           textObj[i]['detail'] = JSON.parse(textObj[i]['detail']);
         }
@@ -79,7 +84,7 @@ function generateTextToUpdate(textObj, title = '', documentId = 0) {
   const resObj = {};
   const idArr = [documentId, 0, 0];
   const getCurId = () => idArr.join('.');
-  textObj = combineTextObj(textObj);
+  textObj = combineTextObj(textObj, eqItems);
   textObj.forEach((para) => {
     idArr[1] ++;
     idArr[2] = 0;
@@ -89,7 +94,9 @@ function generateTextToUpdate(textObj, title = '', documentId = 0) {
       resObj[curId] = {};
       resObj[curId].text = text.text;
       for (let tagKey of Object.keys(text.tag)) {
-        resObj[curId][tagKey] = text.tag[tagKey];
+        if (tagItems.includes(tagKey)) {
+          resObj[curId][tagKey] = text.tag[tagKey];
+        }
       }
     });
   });
@@ -239,24 +246,24 @@ function useCursorBlink() {
   })
 }
 
-function textObjEqual(textObj1, textObj2) {
+function textObjEqual(textObj1, textObj2, eqItems) {
   let flag = true;
-  function objEqual(obj1, obj2, ignores) {
+  function objEqual(obj1, obj2, items) {
     if (obj1 && obj2 && typeof obj1 === 'object' && typeof obj2 === 'object') {
-      const keys = new Set(Object.keys(obj1).concat(Object.keys(obj2)));
-      keys.forEach((key) => {
-        if (ignores[key] === true) {
-          return;
-        }
-        if (typeof obj1[key] === 'object') {
-          objEqual(obj1[key], obj2[key] || {}, ignores[key] || {});
+      Object.keys(items).forEach((key) => {
+        if (typeof obj1[key] === 'object' && typeof obj2[key] === 'object') {
+          if (typeof items[key] !== 'object') {
+            if (obj1[key] !== obj2[key]) flag = false;
+          }
+          objEqual(obj1[key], obj2[key], items[key]);
         } else {
-          obj1[key] !== obj2[key] && (flag = false);
+          if (obj1[key] !== obj2[key]) flag = false;
         }
       });
     }
   }
-  objEqual(textObj1, textObj2, equalIgnores);
+  objEqual(textObj1, textObj2, eqItems);
+  // console.log(textObj1, textObj2, flag)
   return flag;
 }
 
@@ -265,12 +272,12 @@ function isSubSign(obj) {
   return !!obj.meta.paraEnd;
 }
 
-function combineTextObj(textObj) {
+function combineTextObj(textObj, eqItems) {
   let textToRender = [];
   let curPara = [];
   let prevT = {};
   textObj.forEach((t) => {
-    if (textObjEqual(t, prevT)) {
+    if (textObjEqual(t, prevT, eqItems)) {
       prevT.text += t.text;
     } else {
       curPara.push(prevT);

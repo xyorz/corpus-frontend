@@ -30,7 +30,6 @@ function RouterConfig(props) {
           }
         />
       ))}
-      {/* <Redirect from="/app/*" to="/app/manage" /> */}
     </>
   )
 }
@@ -47,6 +46,7 @@ const createMainRouter = (config) => () => (
         />
       ))}
     </Switch>
+    <Redirect from="/" to="/app/manage" exact />
   </HashRouter>
 )
 

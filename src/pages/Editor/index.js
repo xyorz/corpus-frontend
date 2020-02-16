@@ -1,6 +1,6 @@
 import React, {useState, useEffect, useRef} from 'react'
 import {useHistory} from 'react-router-dom'
-import {Spin, Button, message} from 'antd'
+import {Spin, Button, Input, message} from 'antd'
 import {useSelector, useDispatch} from 'react-redux'
 import API from '../../API'
 import Tags from './Tags'
@@ -30,6 +30,15 @@ const selectedTextStyle = {
   background: "#3994ef"
 }
 
+const eqItems = {
+  tag: true,
+  meta: {
+    paraEnd: true,
+    cursor: true,
+    selected: true
+  },
+}
+
 function Editor() {
   const history = useHistory();
   const urlParams = getUrlParams([0, 1]);
@@ -42,6 +51,7 @@ function Editor() {
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
   const [textTitle, setTextTitle] = useState('');
+  const [titleInputVisible, setTitleInputVisible] = useState(!textTitle);
   const [text, textAPI] = useText();
   const [tags, setTags] = useState([]);
   const [offset, setOffset] = useState({startOffset: 0, endOffset: 0});
@@ -53,32 +63,38 @@ function Editor() {
   useEffect(() => {
     API.post('/corpus/authors_info/').then((data) => {
       let initialTags = data.data.list;
-      if (remoteId) {
+      if (remoteId && parseInt(remoteId)) {
         API.post('/corpus/doc/', {id: remoteId}).then((data) => {
           const parseResult = parseText(data.data.doc);
-          const tagsToAdd = parseResult.tags.filter((resTag) => {
-            return !tags.some((tag) => textObjEqual(resTag, tag));
-          });
-          initialTags = [...initialTags].concat(tagsToAdd);
+          console.log(parseResult)
+          let tagsToAdd = parseResult.tags;
+          initialTags = [...initialTags].filter((it) => {
+            return !tagsToAdd.some((ta) => ta.color.toUpperCase() === it.color.toUpperCase())
+          })
+          initialTags = new Set(initialTags.concat(tagsToAdd));
           textAPI.insertText(0, parseResult.text);
           setTextTitle(parseResult.title);
+          setTitleInputVisible(false);
+          setTags(initialTags);
         }).catch((e) => {
           // TODO: handle error
           console.log(e)
         })
       } else if (localDocInfo) {
-        initialTags = combineTagsByColor(initialTags, localDocInfo.tags);
+        initialTags = new Set(combineTagsByColor(initialTags, localDocInfo.tags)); 
         setTextTitle(localDocInfo.title);
+        setTags(initialTags);
         // fix tag pointer
         localDocInfo.text.forEach(t => {
-          const newTag = initialTags.filter(it => it.color.toUpperCase() === t.tag.color.toUpperCase())[0];
+          const newTag = [...initialTags].filter(it => it.color.toUpperCase() === t.tag.color.toUpperCase())[0];
           t.tag = newTag;
-        })
+        });
         textAPI.insertText(0, localDocInfo.text);
+      } else {
+        setTags(initialTags);
       }
-      initialTags = new Set(initialTags); 
-      setTags(initialTags);
     }).catch((e) => {
+      console.log(e)
       // TODO: handle error
     });
   }, []);
@@ -202,6 +218,7 @@ function Editor() {
   }
   const commitText = () => {
     if (remoteId || !localId) {
+      if (!parseInt(remoteId)) remoteId = -1;
       API.post('/corpus/insert/', {...generateTextToUpdate(text, textTitle, remoteId)})
         .then(() => {
           message.success('修改成功');
@@ -225,7 +242,7 @@ function Editor() {
   if (loading) {
     return <Spin />
   }
-  const textCombine = combineTextObj(text);
+  const textCombine = combineTextObj(text, eqItems);
   return (
     <div 
       className="textContainer" 
@@ -258,6 +275,10 @@ function Editor() {
         onMouseUp={(e) => {
           let target = e.target;
           while(target && target.getAttribute('class') !== 'textBox') {
+            // 标题input
+            if (target.getAttribute('class') === 'textTitle') {
+              return;
+            }
             target = target.parentElement;
           }
           if (!target) {
@@ -276,7 +297,23 @@ function Editor() {
           }
         }}
       >
-        <div className="textTitle">{textTitle}</div>
+        <div className="textTitle" >
+          {titleInputVisible
+            ? <Input
+                className="titleInput"
+                placeholder="请输入文章标题"
+                autoFocus
+                onChange={(e) => setTextTitle(e.target.value)}
+                value={textTitle}
+                onBlur={() => {
+                  if (textTitle)
+                    setTitleInputVisible(false)
+                }}
+              /> 
+            : <span onClick={() => setTitleInputVisible(true)}>
+                {textTitle}
+              </span>}
+        </div>
         <Tags tags={tags} setTags={setTags} />
         <div className="textContent">
           {textCombine.map((para, index) => (

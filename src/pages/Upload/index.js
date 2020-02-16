@@ -63,6 +63,7 @@ function Upload(props) {
   const storedDocInfoList = useSelector(state => state.storedDocInfoList, () => false);
   const [globalTags, setGlobalTags] = useState([]);
   const [enableGlobalTags, setEnableGlobalTags] = useState(false);
+  const [presets, setPresets] = useState(null);
 
   useEffect(() => {
     API.post('/corpus/authors_info/').then((data) => {
@@ -70,6 +71,18 @@ function Upload(props) {
     }).catch((e) => {
       // TODO: handle error
     });
+  }, []);
+
+  useEffect(() => {
+    API.post('/corpus/get_preset/')
+      .then((res) => {
+        const presets = res.data.list;
+        const result = {};
+        presets.forEach((item) => {
+          result[item.type] = item.value.split('|');
+        });
+        setPresets(result);
+      })
   }, []);
 
   let dataSource = [];
@@ -98,7 +111,7 @@ function Upload(props) {
       tagsRender: (
         <>
           {docInfo.tags.reduce((tagRenderList, tag, index) => {
-            const tagRender = <TagWithModal tag={tag} setTag={setTag} key={index} />;
+            const tagRender = <TagWithModal tag={tag} setTag={setTag} key={index} initial={presets} />;
             if (enableGlobalTags && globalTags.some((gt) => {
               return gt.color.toUpperCase() === tag.color.toUpperCase();
             })) {

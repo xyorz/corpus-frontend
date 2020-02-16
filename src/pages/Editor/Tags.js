@@ -17,18 +17,31 @@ function Tags(props) {
         setPresets(result);
       })
   }, []);
-  const {tags, setTags} = props;
+  const {tags, setTags, removable} = props;
   function setTag() {
     setTags(new Set(tags));
   }
   function addTag(tag) {
+    tag.id = -1;
+    tag.preset = true;
     setTags(new Set([...tags].concat(tag)));
+  }
+  function delTag(tag) {
+    tags.delete(tag);
+    setTags(new Set([...tags]));
   }
   return (
     <div className={'tagsContainer' + ' ' + props.className || ''}>
       <div className="tagsBox">
         {[...tags].map((tag, index) => (
-          <TagWithModal tag={tag} setTag={setTag} initial={presets} key={index} />
+          <TagWithModal 
+            tag={tag} 
+            setTag={setTag} 
+            delTag={delTag} 
+            initial={presets} 
+            removable={removable} 
+            key={index} 
+          />
         ))}
         <TagWithModal tag={{}} setTag={addTag} initial={presets} />
       </div>

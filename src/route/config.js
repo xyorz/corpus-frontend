@@ -9,7 +9,7 @@ let menuConfig = [
     title: '文档管理',
     icon: 'copy'
   }, {
-    path: '/app/editor/local/-1',
+    path: '/app/editor/local',
     component: pages.Editor,
     title: '文本编辑',
     icon: 'scan',

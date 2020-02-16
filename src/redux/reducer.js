@@ -1,11 +1,13 @@
 import {
   PUSH_DOC_INFO_LIST,
   SET_DOC_INFO_LIST,
-  DEL_DOC_INFO_LIST
+  DEL_DOC_INFO_LIST,
+  SET_USER_INFO
 } from './actionTypes'
 
 const defaultState = {
   storedDocInfoList: [],
+  userInfo: {}
 }
 
 export default (state = defaultState, action) => {
@@ -23,6 +25,12 @@ export default (state = defaultState, action) => {
       };
     case DEL_DOC_INFO_LIST:
       state.storedDocInfoList.splice(action.payload);
+      return {
+        ...state
+      };
+    case SET_USER_INFO:
+      const userInfo = action.payload;
+      state.userInfo = userInfo;
       return {
         ...state
       };

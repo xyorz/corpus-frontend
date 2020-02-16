@@ -9,3 +9,11 @@ export const defaultTag = {
   type: '原文',
   color: '#000000'
 }
+
+export const tagItems = [
+  'author',
+  'color',
+  'type',
+  'area',
+  'dynasty'
+]

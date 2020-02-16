@@ -26,6 +26,19 @@ function Manage(props) {
       setDataSource(data.data.list)
     }
   )}, []);
+  function deleteDoc(docId) {
+    Modal.confirm({
+      title: '确认删除此文档？',
+      okText: '确认',
+      cancelText: '取消',
+      onOk: () => {
+        API.post('/corpus/delete/', {id: docId}).then((data) => {
+          setDataSource(data.data.docList);
+          message.success('删除成功！');
+        })
+      }
+    })
+  }
   if (!dataSource) {
     return <Spin />
   } else {
@@ -35,7 +48,12 @@ function Manage(props) {
           <Link to={`/app/editor/remote/${data.id}`}>
             <Button>修改</Button>
           </Link>
-          <Button style={{marginLeft: '10px'}}>删除</Button>
+          <Button 
+            style={{marginLeft: '10px'}}
+            onClick={() => deleteDoc(data.id)}
+          >
+            删除
+          </Button>
         </>
       )
     })

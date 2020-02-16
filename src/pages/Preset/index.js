@@ -50,7 +50,7 @@ function Preset(props) {
         <Tabs className="tabs" defaultActiveKey="1" className="tabs">
           <TabPane tab="预设标签" key="1">
             <div className="inputGroupContainer">
-              <Tags tags={tags} setTags={setTags} />
+              <Tags tags={tags} setTags={setTags} removable />
               <Button onClick={submitPresetAuthor} className="submit">提交</Button>
             </div>
           </TabPane>

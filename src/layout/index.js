@@ -1,5 +1,6 @@
 import React from 'react'
 import {Layout, Menu, Breadcrumb, Icon, message} from 'antd'
+import {useSelector} from 'react-redux'
 import {menuConfig} from '../route/config'
 import {Link, useLocation, useHistory} from 'react-router-dom'
 import {ContentRouter, getConfigByPathname} from '../route'
@@ -12,6 +13,7 @@ const {Header, Content, Footer, Sider} = Layout;
 function PageLayout(props) {
   const location = useLocation();
   const history = useHistory();
+  const userInfo = useSelector(state => state.userInfo);
   const curRouteConfigList = getConfigByPathname(location.pathname);
   function logOut() {
     API.post('/corpus/logout/')
@@ -69,7 +71,7 @@ function PageLayout(props) {
             mode="horizontal"
             style={{ lineHeight: '64px', display: 'flex', justifyContent: 'flex-end' }}
           >
-            <Menu.Item onClick={logOut}>RootManager</Menu.Item>
+            <Menu.Item onClick={logOut} title="点击登出">{userInfo.username}</Menu.Item>
           </Menu>
         </Header>
         <Content style={{ margin: '0 16px' }}>

@@ -7,22 +7,23 @@ const { Option } = Select;
 
 const colors = ["#f44336", "#e91e63", "#9c27b0", "#3f51b5", "#2196f3", "#009688", "#4caf50", "#8bc34a", "#cddc39", "#ffeb3b", "#ffc107", "#ff5722", "#795548", "#607d8b"];
 let defaultInitial = {};
-console.log('defaultTag:', defaultTag)
 for(let key in defaultTag) {
   defaultInitial[key] = [];
 }
 defaultInitial.color = colors;
-console.log(defaultInitial)
 
 function TagWithModal(props) {
   const [visible, setVisible] = useState(false);
-  const {tag, setTag, form} = props
+  const {tag, setTag, delTag, removable, form} = props
   const initial = props.initial || defaultInitial;
   const {getFieldDecorator, setFieldsValue, getFieldValue} = form;
   function handleSubmit() {
     form.validateFields((err, values) => {
+      console.log('commit result:', values)
       if (!err) {
-        values.color = values.color.hex;
+        if (values.color.hex) {
+          values.color = values.color.hex;
+        }
         Object.assign(tag, values);
         setTag(tag);
         setVisible(false);
@@ -40,7 +41,13 @@ function TagWithModal(props) {
     <>
       <Tag 
         color={tag.color}
+        closable={removable}
         onClick={() => setVisible(true)}
+        onClose={(e) => {
+          e.stopPropagation();
+          delTag(tag);
+        }}
+        style={{marginBottom: '7px'}}
       >
         {tag.author || '未编辑'}
       </Tag>
@@ -56,7 +63,7 @@ function TagWithModal(props) {
           <Form.Item>
             {getFieldDecorator('author', {
               rules: [{ required: true, message: '请输入作者!' }],
-              initialValue: tag.author || ""
+              initialValue: tag.author || ''
             })(
               <Input
                 suffix={<span style={{ color: 'rgba(0,0,0,.25)' }}>作者</span>}
@@ -67,13 +74,13 @@ function TagWithModal(props) {
           <Form.Item>
             {getFieldDecorator('dynasty', {
               rules: [{ required: true, message: '请输入朝代!' }],
-              initialValue: tag.dynasty || ''
+              initialValue: tag.dynasty || initial.dynasty[0]
             })(
               <Select
                 showSearch
                 notFoundContent={''}
                 suffixIcon={<span style={{ color: 'rgba(0,0,0,.25)', fontSize: '14px' }}>朝代</span>}
-                placeholder=''
+                placeholder='请选择朝代'
                 optionFilterProp='children'
                 onSearch={(e) => {
                   if(e){
@@ -93,7 +100,7 @@ function TagWithModal(props) {
           <Form.Item>
             {getFieldDecorator('type', {
               rules: [{ required: true, message: '请输入译体!' }],
-              initialValue: tag.type || ''
+              initialValue: tag.type || initial.type[0]
             })(
               <Select
                 showSearch
@@ -119,7 +126,7 @@ function TagWithModal(props) {
           <Form.Item>
             {getFieldDecorator('area', {
               rules: [{ required: true, message: '请输入地域!' }],
-              initialValue: tag.area || ''
+              initialValue: tag.area || initial.area[0]
             })(
               <Select
                 showSearch
@@ -145,13 +152,13 @@ function TagWithModal(props) {
           <Form.Item>
             {getFieldDecorator('color', {
               rules: [{ required: true, message: '请选择颜色!' }],
-              initialValue: tag.color || ''
+              initialValue: tag.color || initial.color[0]
             })(
               <CirclePicker 
                 colors={initial.color}
                 color={getFieldValue('color')}
                 circleSize={26.4}
-                onChange={(e) => setFieldsValue({color: e.hex})}
+                // onChange={(e) => {console.log('asd', e); setFieldsValue({color: e.hex})}}
                 width={'100%'}
               />
             )}
