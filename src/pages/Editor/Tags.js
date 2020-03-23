@@ -28,6 +28,7 @@ function Tags(props) {
   }
   function delTag(tag) {
     tags.delete(tag);
+    console.log(tags)
     setTags(new Set([...tags]));
   }
   return (
@@ -40,7 +41,7 @@ function Tags(props) {
             delTag={delTag} 
             initial={presets} 
             removable={removable} 
-            key={index} 
+            key={Math.random()}
           />
         ))}
         <TagWithModal tag={{}} setTag={addTag} initial={presets} />

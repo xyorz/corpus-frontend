@@ -17,7 +17,9 @@ function parseText(textJSON) {
   let curTag = null;
   const tagEq = (tag1, tag2) => {
     for (let item of tagItems) {
-      if (tag1[item] !== tag2[item]) return false;
+      if (tag1[item] !== tag2[item]) {
+        return false;
+      }
     }
     return true;
   }
@@ -40,9 +42,6 @@ function parseText(textJSON) {
     }
     else{
       if(!tags.some((tag) => tagEq(tag, textObj[i]) && (curTag = tag))) {
-        if(textObj[i]['detail'] && typeof textObj[i]['detail'] === 'string'){
-          textObj[i]['detail'] = JSON.parse(textObj[i]['detail']);
-        }
         tags.push(textObj[i]);
         curTag = textObj[i];
       }
@@ -95,7 +94,12 @@ function generateTextToUpdate(textObj, title = '', documentId = 0) {
       resObj[curId].text = text.text;
       for (let tagKey of Object.keys(text.tag)) {
         if (tagItems.includes(tagKey)) {
-          resObj[curId][tagKey] = text.tag[tagKey];
+          if (typeof text.tag[tagKey] !== 'string') {
+            console.log('222', tagKey, text.tag[tagKey])
+            resObj[curId][tagKey] = JSON.stringify(text.tag[tagKey]);
+          } else {
+            resObj[curId][tagKey] = text.tag[tagKey];
+          }
         }
       }
     });

@@ -1,8 +1,9 @@
 import {useEffect} from 'react'
 import axios from 'axios'
+import config from '../util/config'
 
 // TODO: add some axios config/interceptors
-axios.defaults.baseURL = 'http://120.78.71.214';
+axios.defaults.baseURL = config.baseUrl;
 axios.defaults.withCredentials = true;
 
 const methods = ['get', 'post'];

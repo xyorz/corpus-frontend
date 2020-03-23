@@ -1,5 +1,6 @@
 export default {
-  baseUrl: '120.78.71.214'
+  // baseUrl: 'http://120.78.71.214',
+  baseUrl: 'http://127.0.0.1:8000'
 }
 
 export const defaultTag = {
@@ -15,5 +16,6 @@ export const tagItems = [
   'color',
   'type',
   'area',
-  'dynasty'
+  'dynasty',
+  'detail'
 ]

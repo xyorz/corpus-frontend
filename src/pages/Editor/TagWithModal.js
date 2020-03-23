@@ -1,7 +1,8 @@
 import React, {useState} from 'react';
-import {Tag, Form, Input, Modal, Select} from 'antd';
+import {Tag, Form, Input, Modal, Select, Icon, Button} from 'antd';
 import {CirclePicker} from 'react-color'
 import {defaultTag} from '../../util/config'
+import DetailModal from './DetailModal'
 
 const { Option } = Select;
 
@@ -14,15 +15,21 @@ defaultInitial.color = colors;
 
 function TagWithModal(props) {
   const [visible, setVisible] = useState(false);
+  const [detailVisible, setDetailVisible] = useState(false);
+  const [details, setDetails] = useState(null);
   const {tag, setTag, delTag, removable, form} = props
   const initial = props.initial || defaultInitial;
   const {getFieldDecorator, setFieldsValue, getFieldValue} = form;
   function handleSubmit() {
     form.validateFields((err, values) => {
-      console.log('commit result:', values)
       if (!err) {
         if (values.color.hex) {
           values.color = values.color.hex;
+        }
+        console.log(details)
+        if (details) {
+          console.log(details)
+          values.detail = details;
         }
         Object.assign(tag, values);
         setTag(tag);
@@ -32,6 +39,17 @@ function TagWithModal(props) {
   }
   function handleCancel() {
     setVisible(false);
+  }
+  function showDetail() {
+    setDetailVisible(true);
+  }
+  function hideDetail() {
+    setDetailVisible(false);
+  }
+  function submitDetail(value) {
+    console.log(value)
+    setDetails(value);
+    hideDetail();
   }
   initial.color = initial.color.map((c) => c.toUpperCase());
   if (tag.color && !initial.color.includes(tag.color.toUpperCase())) {
@@ -51,6 +69,12 @@ function TagWithModal(props) {
       >
         {tag.author || '未编辑'}
       </Tag>
+      <DetailModal 
+        visible={detailVisible}
+        onCancel={hideDetail}
+        onSubmit={submitDetail}
+        initDetail={details}
+      />
       <Modal
         title="标签编辑"
         visible={visible}
@@ -66,10 +90,23 @@ function TagWithModal(props) {
               initialValue: tag.author || ''
             })(
               <Input
-                suffix={<span style={{ color: 'rgba(0,0,0,.25)' }}>作者</span>}
+                suffix={<span style={{ color: 'rgba(0,0,0,.25)', fontSize: '14px' }}>作者</span>}
                 placeholder="请输入作者"
               />
             )}
+            <Icon 
+              type="setting" 
+              style={{
+                fontSize: '20px', 
+                color: '#313653', 
+                position: 'absolute', 
+                marginTop: '10px',
+                marginLeft: '10px',
+                cursor: 'pointer'
+              }} 
+              title="添加详情"
+              onClick={showDetail}
+            />
           </Form.Item>
           <Form.Item>
             {getFieldDecorator('dynasty', {

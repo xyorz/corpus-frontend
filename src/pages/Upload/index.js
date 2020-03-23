@@ -2,7 +2,7 @@ import React, {useState, useEffect, useRef} from 'react'
 import {Table, Button, message, Modal, Spin} from 'antd'
 import {Link, useHistory} from 'react-router-dom'
 import API from '../../API'
-import {parseFile} from './util'
+import {parseFile, testWorker} from './util'
 import {parseText, generateTextToUpdate} from '../Editor/util'
 import FileDragger from './FileDragger'
 import Tags from '../Editor/Tags'
@@ -67,10 +67,11 @@ function Upload(props) {
 
   useEffect(() => {
     API.post('/corpus/authors_info/').then((data) => {
-      setGlobalTags(data.data.list);
+      setGlobalTags(new Set(data.data.list));
     }).catch((e) => {
       // TODO: handle error
     });
+    testWorker();
   }, []);
 
   useEffect(() => {
@@ -112,7 +113,7 @@ function Upload(props) {
         <>
           {docInfo.tags.reduce((tagRenderList, tag, index) => {
             const tagRender = <TagWithModal tag={tag} setTag={setTag} key={index} initial={presets} />;
-            if (enableGlobalTags && globalTags.some((gt) => {
+            if (enableGlobalTags && [...globalTags].some((gt) => {
               return gt.color.toUpperCase() === tag.color.toUpperCase();
             })) {
               return tagRenderList;
@@ -154,7 +155,7 @@ function Upload(props) {
         if (!tag.author) {
           // 尝试从全局标签找
           if (enableGlobalTags) {
-            const matchTag = globalTags.find(t => t.color.toUpperCase() === tag.color.toUpperCase());
+            const matchTag = [...globalTags].find(t => t.color.toUpperCase() === tag.color.toUpperCase());
             if (matchTag) {
               for(let key in matchTag) {
                 docInfo.tags[tagIndex][key] = matchTag[key]
@@ -162,11 +163,11 @@ function Upload(props) {
               delete docInfo.tags[tagIndex].preset;
               delete docInfo.tags[tagIndex].id;
             } else {
-              message.warn('请编辑所有标签1');
+              message.warn('请编辑所有标签');
               return;
             }
           } else {
-            message.warn('请编辑所有标签2');
+            message.warn('请编辑所有标签');
             return;
           }
         }
