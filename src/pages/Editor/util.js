@@ -109,7 +109,7 @@ function generateTextToUpdate(textObj, title = '', documentId = 0) {
       idArr[2] ++;
       offsetCount += text.text.length;
       const curId = getCurId();
-      resObj[curId] = {};
+      resObj[curId] = {document: title};
       resObj[curId].text = text.text;
       for (let tagKey of Object.keys(text.tag)) {
         if (tagItems.includes(tagKey)) {
