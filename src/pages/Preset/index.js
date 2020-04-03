@@ -35,10 +35,11 @@ function Preset(props) {
   }, []);
   function submitPresetAuthor() {
     console.log(...tags);
-    tags.forEach(item => {
-      delete item.detail
-    })
-    API.post('/corpus/authors_info_insert/', {list: [...tags]})
+    const tagsToUpload = [...tags];
+    tagsToUpload.forEach(item => {
+      item.detail = JSON.stringify(item.detail);
+    });
+    API.post('/corpus/authors_info_insert/', {list: tagsToUpload})
       .then((res) => {
         if(res.data.success) {
           message.success('保存成功');

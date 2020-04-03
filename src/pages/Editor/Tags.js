@@ -1,5 +1,4 @@
 import React, {useState, useEffect} from 'react'
-import {Tag} from 'antd'
 import TagWithModal from './TagWithModal'
 import API from '../../API'
 import './tags.css'
@@ -28,7 +27,6 @@ function Tags(props) {
   }
   function delTag(tag) {
     tags.delete(tag);
-    console.log(tags)
     setTags(new Set([...tags]));
   }
   return (
@@ -41,7 +39,7 @@ function Tags(props) {
             delTag={delTag} 
             initial={presets} 
             removable={removable} 
-            key={Math.random()}
+            key={tag.id? tag.id: index + 3154}
           />
         ))}
         <TagWithModal tag={{}} setTag={addTag} initial={presets} />

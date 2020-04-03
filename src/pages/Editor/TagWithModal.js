@@ -16,8 +16,12 @@ defaultInitial.color = colors;
 function TagWithModal(props) {
   const [visible, setVisible] = useState(false);
   const [detailVisible, setDetailVisible] = useState(false);
-  const [details, setDetails] = useState(null);
-  const {tag, setTag, delTag, removable, form} = props
+  const {tag, setTag, delTag, removable, form} = props;
+  let dt = null;
+  if (tag.detail && typeof tag.detail === 'string') {
+    dt = JSON.parse(tag.detail);
+  }
+  const [details, setDetails] = useState(dt);
   const initial = props.initial || defaultInitial;
   const {getFieldDecorator, setFieldsValue, getFieldValue} = form;
   function handleSubmit() {
@@ -73,7 +77,7 @@ function TagWithModal(props) {
         visible={detailVisible}
         onCancel={hideDetail}
         onSubmit={submitDetail}
-        initDetail={details}
+        initDetails={details}
       />
       <Modal
         title="标签编辑"

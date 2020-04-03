@@ -9,26 +9,26 @@ import Layout from './layout'
 function App() {
   const history = useHistory();
   const dispatch = useDispatch();
-  const [hasLogin, setHasLogin] = useState(false);
-  useEffect(() => {
-    API.post('/corpus/login/')
-      .then((res) => {
-        const success = res.data.success;
-        console.log('session', res.data)
-        if (!success) {
-          setHasLogin(false);
-          history.push('/login');
-        } else {
-          setHasLogin(true);
-          dispatch({
-            type: SET_USER_INFO,
-            payload: {
-              username: res.data.info.username
-            }
-          })
-        }
-      })
-  }, []);
+  const [hasLogin, setHasLogin] = useState(true);
+  // useEffect(() => {
+  //   API.post('/corpus/login/')
+  //     .then((res) => {
+  //       const success = res.data.success;
+  //       console.log('session', res.data)
+  //       if (!success) {
+  //         setHasLogin(false);
+  //         history.push('/login');
+  //       } else {
+  //         setHasLogin(true);
+  //         dispatch({
+  //           type: SET_USER_INFO,
+  //           payload: {
+  //             username: res.data.info.username
+  //           }
+  //         })
+  //       }
+  //     })
+  // }, []);
   if (hasLogin) {
     return <Layout />
   }

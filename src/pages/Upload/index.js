@@ -2,7 +2,7 @@ import React, {useState, useEffect, useRef} from 'react'
 import {Table, Button, message, Modal, Spin} from 'antd'
 import {Link, useHistory} from 'react-router-dom'
 import API from '../../API'
-import {parseFile, testWorker} from './util'
+import {parseFile} from './util'
 import {parseText, generateTextToUpdate} from '../Editor/util'
 import FileDragger from './FileDragger'
 import Tags from '../Editor/Tags'
@@ -71,7 +71,6 @@ function Upload(props) {
     }).catch((e) => {
       // TODO: handle error
     });
-    testWorker();
   }, []);
 
   useEffect(() => {
@@ -147,7 +146,6 @@ function Upload(props) {
     }
   }
   function handleSubmit() {
-    console.log(storedDocInfoList);
     const docInfoList = storedDocInfoList.slice();
     for (let docInfo of docInfoList) {
       for (let tagIndex in docInfo.tags) {
@@ -178,7 +176,6 @@ function Upload(props) {
     docInfoList.forEach(docInfo => {
       const parseResult = generateTextToUpdate(docInfo.text, docInfo.title, 0);
       requestList.push(API.post('/corpus/insert/', parseResult));
-      console.log(parseResult)
     });
     Promise.all(requestList).then(() => {
       message.success('上传成功!');

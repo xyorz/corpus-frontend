@@ -1,10 +1,11 @@
 import React, {useState, useEffect, useRef} from 'react'
 import {useHistory} from 'react-router-dom'
-import {Spin, Button, Input, message} from 'antd'
+import {Spin, Button, Input, Tooltip, message} from 'antd'
 import {useSelector, useDispatch} from 'react-redux'
 import API from '../../API'
 import Tags from './Tags'
 import TagSelector from './TagSelector'
+import ZhujieModal from './ZhujieModal'
 import {
   parseText,
   generateTextToUpdate,
@@ -33,9 +34,10 @@ const selectedTextStyle = {
 const eqItems = {
   tag: true,
   meta: {
-    paraEnd: true,
+    // paraEnd: true,
     cursor: true,
-    selected: true
+    selected: true,
+    zhujie: true
   },
 }
 
@@ -53,11 +55,14 @@ function Editor() {
   const [textTitle, setTextTitle] = useState('');
   const [titleInputVisible, setTitleInputVisible] = useState(!textTitle);
   const [text, textAPI] = useText();
-  const [tags, setTags] = useState([]);
+  const [tags, setTags] = useState(new Set());
   const [offset, setOffset] = useState({startOffset: 0, endOffset: 0});
   const [usingIME, setUsingIME] = useState(false);
   const [pointerPos, setPointerPos] = useState({top: 0, left: 0});
   const [selectorVisible, setSelectorVisible] = useState(false);
+  const [ZhujieModalVisible, setZhujieModalVisible] = useState(false);
+  const [zhujieVal, setZhujieVal] = useState('');
+  const [zhujieIndex, setZhujieIndex] = useState(-1);
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -65,8 +70,8 @@ function Editor() {
       let initialTags = data.data.list;
       if (remoteId && parseInt(remoteId)) {
         API.post('/corpus/doc/', {id: remoteId}).then((data) => {
+          console.log(JSON.stringify(data.data.doc))
           const parseResult = parseText(data.data.doc);
-          console.log(parseResult)
           let tagsToAdd = parseResult.tags;
           initialTags = [...initialTags].filter((it) => {
             return !tagsToAdd.some((ta) => ta.color.toUpperCase() === it.color.toUpperCase())
@@ -91,7 +96,7 @@ function Editor() {
         });
         textAPI.insertText(0, localDocInfo.text);
       } else {
-        setTags(initialTags);
+        setTags(new Set(initialTags));
       }
     }).catch((e) => {
       console.log(e)
@@ -219,7 +224,8 @@ function Editor() {
   const commitText = () => {
     if (remoteId || !localId) {
       if (!parseInt(remoteId)) remoteId = -1;
-      API.post('/corpus/insert/', {...generateTextToUpdate(text, textTitle, remoteId)})
+      console.log(generateTextToUpdate(text, textTitle, remoteId))
+      API.post('/corpus/insert/', generateTextToUpdate(text, textTitle, remoteId))
         .then(() => {
           message.success('修改成功');
           history.push('/app/manage');
@@ -238,6 +244,19 @@ function Editor() {
       history.push('/app/upload');
     }
   }
+  const setZhujie = (val, index) => {
+    setZhujieModalVisible(false);
+    textAPI.setTextMeta(index, index+1, {zhujie: val, index: index});
+  }
+  const deleteZhujie = (index) => {
+    setZhujieModalVisible(false);
+    textAPI.setTextMeta(index, index+1, {zhujie: false});
+  }
+  const clickZhujie = (val) => {
+    setZhujieVal(val);
+    setZhujieModalVisible(true);
+  }
+  // console.log(text)
   // 加载中
   if (loading) {
     return <Spin />
@@ -247,11 +266,21 @@ function Editor() {
     <div 
       className="textContainer" 
     >
+      <ZhujieModal 
+        visible={ZhujieModalVisible}
+        onCancel={() => setZhujieModalVisible(false)}
+        onSubmit={setZhujie}
+        text={zhujieVal}
+        setText={setZhujieVal}
+        onDelete={deleteZhujie}
+        index={zhujieIndex}
+      />
       <TagSelector 
         tags={tags} 
         position={pointerPos}
         visible={selectorVisible} 
         setTextTag={setSelectedTextTag}
+        onClickZhujie={() => {setZhujieModalVisible(true); setZhujieVal(""); setZhujieIndex(offset.endOffset)}}
       />
       <div>
         <Button 
@@ -327,6 +356,11 @@ function Editor() {
                   >
                     {t.text}
                   </span>
+                  {t.meta.zhujie? (
+                    <Tooltip title={t.meta.zhujie}>
+                      <span onClick={() => {clickZhujie(t.meta.zhujie); setZhujieIndex(t.meta.index)}}>[*]</span>
+                    </Tooltip>
+                  ): ""}
                 </React.Fragment>
               ))}
             </div>

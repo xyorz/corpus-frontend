@@ -5,7 +5,7 @@ import {tagItems} from '../../util/config'
 const eqItems = {
   tag: true,
   meta: {
-    paraEnd: true
+    // paraEnd: true,
   }
 }
 
@@ -15,6 +15,7 @@ function parseText(textJSON) {
   const tags = [];
   let title = "";
   let curTag = null;
+  let lenCount = 0;
   const tagEq = (tag1, tag2) => {
     for (let item of tagItems) {
       if (tag1[item] !== tag2[item]) {
@@ -50,15 +51,31 @@ function parseText(textJSON) {
         tags.push(textObj[i]);
       } // 正文部分
       else{
-        textObj[i].text.split('').forEach((t) => {
+        let zhujie = null;
+        if (textObj[i].zhujie) {
+          zhujie = JSON.parse(textObj[i].zhujie);
+        }
+        textObj[i].text.split('').forEach((t, index) => {
+          const curIndex = lenCount + index;
+          let curZhujie = null;
+          if (zhujie) {
+            for (let i in zhujie.offset) {
+              if (zhujie.offset[i] === index) {
+                curZhujie = zhujie.content[i];
+              }
+            }
+          }
           textRes.push({
             text: t,
             tag: curTag,
             meta: {
-              hash: getHashCode()
+              hash: getHashCode(),
+              zhujie: curZhujie,
+              index: curIndex
             }
           })
         });
+        lenCount += textObj[i].text.length;
         const ids = i.split('.').map(id => parseInt(id));
         ids[2] ++;
         if (ids.length === 3 && !Object.keys(textObj).includes(ids.join('.'))) {
@@ -83,24 +100,30 @@ function generateTextToUpdate(textObj, title = '', documentId = 0) {
   const resObj = {};
   const idArr = [documentId, 0, 0];
   const getCurId = () => idArr.join('.');
-  textObj = combineTextObj(textObj, eqItems);
+  let offsetCount = 0;
+  textObj = combineTextObj(textObj, eqItems, true);
   textObj.forEach((para) => {
     idArr[1] ++;
     idArr[2] = 0;
     para.forEach((text) => {
       idArr[2] ++;
+      offsetCount += text.text.length;
       const curId = getCurId();
       resObj[curId] = {};
       resObj[curId].text = text.text;
       for (let tagKey of Object.keys(text.tag)) {
         if (tagItems.includes(tagKey)) {
-          if (typeof text.tag[tagKey] !== 'string') {
-            console.log('222', tagKey, text.tag[tagKey])
+          if (text.tag[tagKey] && typeof text.tag[tagKey] !== 'string') {
             resObj[curId][tagKey] = JSON.stringify(text.tag[tagKey]);
           } else {
             resObj[curId][tagKey] = text.tag[tagKey];
           }
         }
+      }
+      // 处理注解
+      if (text.zhujie) {
+        const zhujie = text.zhujie;
+        resObj[curId].zhujie = JSON.stringify(zhujie);
       }
     });
   });
@@ -267,7 +290,6 @@ function textObjEqual(textObj1, textObj2, eqItems) {
     }
   }
   objEqual(textObj1, textObj2, eqItems);
-  // console.log(textObj1, textObj2, flag)
   return flag;
 }
 
@@ -276,10 +298,10 @@ function isSubSign(obj) {
   return !!obj.meta.paraEnd;
 }
 
-function combineTextObj(textObj, eqItems) {
+function combineTextObj(textObj, eqItems, combineZhujie = false) {
   let textToRender = [];
   let curPara = [];
-  let prevT = {};
+  let prevT = {text: ""};
   textObj.forEach((t) => {
     if (textObjEqual(t, prevT, eqItems)) {
       prevT.text += t.text;
@@ -287,8 +309,17 @@ function combineTextObj(textObj, eqItems) {
       curPara.push(prevT);
       prevT = Object.assign({}, t);
     }
+    // 处理注解
+    if (combineZhujie && t.meta.zhujie) {
+      if (!prevT.zhujie) {
+        prevT.zhujie = {content: [], offset: []};
+      }
+      prevT.zhujie.content.push(t.meta.zhujie);
+      prevT.zhujie.offset.push(prevT.text.length-1);
+    }
     if (isSubSign(t)) {
       curPara.push(prevT);
+      prevT = {text: ""};
       curPara = curPara.slice(1);
       textToRender.push(curPara);
       curPara = [];

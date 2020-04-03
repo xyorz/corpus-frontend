@@ -2,7 +2,7 @@ import React, {useRef} from 'react'
 import './tagSelector.css'
 
 function TagSelector(props) {
-  const {position, tags, visible, setTextTag} = props;
+  const {position, tags, visible, setTextTag, onClickZhujie} = props;
   const containerRef = useRef(null);
   const left = (containerRef.current && position.left - containerRef.current.offsetWidth / 2) || 0;
   const top = (containerRef.current && position.top - containerRef.current.offsetHeight - 10) || 0;
@@ -29,6 +29,7 @@ function TagSelector(props) {
           {tag.author}
         </div>
       ))}
+      <div className="selectorItem" style={{border: ".5px solid gray", background: "gray"}} onClick={onClickZhujie}>添加注解</div>
     </div>
   )
 }

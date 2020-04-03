@@ -40,7 +40,7 @@ const parseFile = (f) => {
               section: sectionName || '',
             };
             xmlDoc.querySelectorAll('p').forEach(pElement => {
-              let [spanText, colorLast, zhujieInfo] = ['', '#000000', []];
+              let [spanText, colorLast, zhujieInfo] = ['', '#000000', {content: [], offset: []}];
               if(pElement.querySelector('t')){
                 idCounter = idIncrease1At(idCounter, 1);
               }
@@ -78,31 +78,28 @@ const parseFile = (f) => {
                       color: colorLast,
                       text: spanText
                     };
-                    if (zhujieInfo.length > 0) {
-                      resObject[idCounter].zhujie = JSON.stringify({zhujie: zhujieInfo});
-                      zhujieInfo = []
+                    if (zhujieInfo.content.length > 0) {
+                      resObject[idCounter].zhujie = JSON.stringify(zhujieInfo);
+                      zhujieInfo = {content: [], offset: []};
                     }
                   }
                   spanText = tElement.innerHTML;
                 }
                 if (footNodeText) {
-                  zhujieInfo.push({
-                    offset: spanText.length,
-                    value: footNodeText
-                  })
+                  zhujieInfo.content.push(footNodeText);
+                  zhujieInfo.offset.push(spanText.length-1);
                 }
                 colorLast = color;
               });
-
               if(spanText){
                 idCounter = idIncrease1At(idCounter, 2);
                 resObject[idCounter] = {
                   color: colorLast,
                   text: spanText
                 };
-                if (zhujieInfo.length > 0) {
-                  resObject[idCounter].zhujie = JSON.stringify({zhujie: zhujieInfo});
-                  zhujieInfo = []
+                if (zhujieInfo.content.length > 0) {
+                  resObject[idCounter].zhujie = JSON.stringify(zhujieInfo);
+                  zhujieInfo = {content: [], offset: []};
                 }
               }
               idCounter = idSet0At(idCounter, 2);
@@ -131,30 +128,6 @@ const parseFile = (f) => {
   });
 };
 
-const workerCode = () => {
-  onmessage = function (e) {
-    console.log('received data:', e.data)
-    e.data.xxx = 'asdasdasd';
-    let xx = new DOMParser().parseFromString('<div>cao</div>', "text/xml")
-    postMessage('123123');
-  }
-}
-
-let code = workerCode.toString();
-code = code.substring(code.indexOf('{')+1, code.lastIndexOf('}'));
-const blob = new Blob([code], {type: 'application/javascript'});
-const worker_script =  URL.createObjectURL(blob);
-
-function testWorker() {
-  const worker = new Worker(worker_script);
-  worker.onmessage = function(e) {
-    console.log('worker data:', e.data)
-  }
-  const dd = {'xxx': 11};
-  worker.postMessage('xx');
-}
-
 export {
   parseFile,
-  testWorker
 }

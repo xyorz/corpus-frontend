@@ -17,5 +17,5 @@ export const tagItems = [
   'type',
   'area',
   'dynasty',
-  'detail'
+  'detail',
 ]
