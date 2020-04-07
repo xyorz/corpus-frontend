@@ -6,3 +6,7 @@
   line-height: 60px;
   font-size: 18px;
 }
+
+.zh2HantTable thead {
+  display: none;
+}

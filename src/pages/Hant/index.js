@@ -1,109 +1,116 @@
 import React, {useState, useEffect} from 'react'
-import HantBox from './HantBox'
-import API from '../../API'
-import {Spin, Button, message, Input} from 'antd'
+import {Button, message, Input} from 'antd'
 import './hant.css'
+import Zh2HantTable from './Zh2HantTable'
+import Zh2HantAddModal from './Zh2HantAddModal'
+import axios from 'axios'
 
 const {Search} = Input;
 
-function Hant(props) {
-  const [items, setItems] = useState([]);
-  const [inputVal, setInputVal] = useState('');
+let timer = null;
 
-  function handleSearch(e) {
-    if (!e) return;
-    const queryList = [];
-    e.split('').forEach(z => queryList.push(API.post('/corpus/get_hant_by_zh/', {zh: z})))
-    Promise.all(queryList).then(dataList => {
-      let resItems = [];
-      dataList.forEach(data => {
-        try {
-          resItems = resItems.concat(data.data.list);
-          message.info('查询完成');
-        } catch (e) {
-          //TODO: handle error
-          console.log(e)
-        }
-      })
-      setItems(resItems);
+const formatList = list => {
+  const resList = [];
+  let resItem = {};
+  for (let i in list) {
+    if (i % 2 === 0) {
+      resItem.id = list[i].id;
+      resItem.box1 = list[i];
+    } else {
+      resItem.box2 = list[i];
+      resList.push(resItem);
+      resItem = {};
+    }
+  }
+  if (resItem.box1) {
+    resList.push(resItem);
+  }
+  return resList;
+}
+
+function Hant(props) {
+  const [data, setData] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [keyword, setKeyword] = useState("");
+
+  useEffect(() => {
+    getAll();
+  }, []);
+
+  const search = word => {
+    if (!word) {
+      setKeyword("");
+      getAll();
+    } else {
+      setKeyword(word);
+      getByKeyword(word);
+    }
+  }
+
+  const refresh = () => {
+    if (!keyword) {
+      getAll();
+    } else {
+      getByKeyword(keyword);
+    }
+  }
+
+  const getAll = inPage => {
+    let pg = inPage;
+    if (pg) {
+      setPage(inPage);      
+    } else {
+      pg = page;
+    }
+    axios.post(`/corpus/get_zh_to_hant_list/`, {page: pg}).then(res => {
+      const list = res.data.list;
+      setData(formatList(list));
+      setTotal(res.data.total);
+    });
+  }
+
+  const getByKeyword = word => {
+    setPage(1);
+    axios.post(`/corpus/get_hant_by_zh/`, {zh: word}).then(res => {
+      const list = res.data.list;
+      setData(formatList(list));
+      setTotal(res.data.total);
     })
   }
 
-  function handleSubmit() {
-    for(let item of items) {
-      if (!item.hant) {
-        message.warn('存在未编辑项，无法提交');
-        return;
-      }
-    }
-    const queryList = [];
-    const zh2Hant = {};
-    items.forEach(item => {
-      if (!zh2Hant[item.zh]) {
-        zh2Hant[item.zh] = [item.hant];
-      } else {
-        zh2Hant[item.zh].push(item.hant);
+  const update = (type, id, zh, hant) => {
+    axios.post(`/corpus/update_zh_to_hant_1/`, {type, id, zh, hant}).then(res => {
+      console.log(res.data);
+      message.success("修改成功！")
+      if (!timer) {
+        refresh();
+         timer = setTimeout(() => {
+           timer = null;
+         }, 1000);
       }
     });
-    for(let key in zh2Hant) {
-      const list = zh2Hant[key].map(h => ({zh: key, hant: h}));
-      queryList.push(API.post('/corpus/update_zh_to_hant/', {zh: key, list: list}))
+  }
+
+  const onSubmitAdd = list => {
+    for (let item of list) {
+      update('insert', null, item.zh, item.hant);
     }
-    Promise.all(queryList).then(dataList => {
-      try {
-        message.success('设置成功');
-      } catch (e) {
-        //TODO: handle error
-        console.log(e)
-      }
-    })
-  }
-
-  function delItem(index) {
-    items.splice(index, 1);
-    setItems(items.slice());
-  }
-
-  function setHant(index, hant) {
-    if (hant.length > 1) {
-      message.warn('限输入一个字');
-      hant = hant.slice(0, 1);
-    }
-    items[index].hant = hant;
-    setItems(items.slice());
-  }
-
-  function setZh(index, zh) {
-    if (zh.length > 1) {
-      message.warn('限输入一个字');
-      zh = zh.slice(0, 1);
-    }
-    items[index].zh = zh;
-    setItems(items.slice());
-  }
-
-  function addItem() {
-    items.push({zh: '', hant: ''});
-    setItems(items.slice());
+    setModalVisible(false);
   }
 
   return (
     <div className="hantContainer">
+      <Zh2HantAddModal visible={modalVisible} setVisible={setModalVisible} onSubmit={onSubmitAdd} />
       <Search
-        onSearch={handleSearch}
+        onSearch={search}
         placeholder="在此输入要搜索的字"
         enterButton="搜索"
         className="hantSearchBox"
       />
-      <HantBox
-        items={items}
-        delItem={delItem}
-        setHant={setHant}
-        setZh={setZh}
-        addItem={addItem}
-        submit={handleSubmit}
-        className="hantBox" 
-      />
+      <Button type="primary" style={{marginBottom: "20px"}} onClick={() => setModalVisible(true)}>添加映射</Button>
+      <Zh2HantTable data={data} update={update} page={page} onChangePage={getAll} total={total} />
     </div>
   )
 }
