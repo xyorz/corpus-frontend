@@ -1,6 +1,6 @@
 import JSZip from 'jszip'
 
-const parseFile = (f) => {
+const parseFile = (f, encoding='utf-8') => {
   let file = f.file;
   function idIncrease1At(id, pos){
     let idArr = id.split('.');
@@ -18,11 +18,11 @@ const parseFile = (f) => {
   // }
   // 读取上传的docx文件用JSZip读取并成DOM对象，用DOM来操作xml
   let reader = new FileReader();
-  reader.readAsBinaryString(file);
-  return new Promise((resolve, reject) => {
-    reader.onload = function () {
+  if(file.name.endsWith('.docx')) {
+    reader.readAsBinaryString(file);
+    return new Promise((resolve, reject) => {
+      reader.onload = function () {
       // docx文件支持
-      if(file.name.endsWith('.docx')){
         let zip = new JSZip();
         zip.loadAsync(this.result).then(function () {
           zip.files['word/document.xml'].async('string').then((content) => {
@@ -107,11 +107,16 @@ const parseFile = (f) => {
             resolve(resObject);
           })
         });
-      }
-      // 文本文件
-      else{
+      };
+    });
+  } else {
+    // 不是docx文件，当做文本文件处理
+    reader.readAsText(file, encoding);
+    return new Promise((resolve, reject) => {
+      reader.onload = function() {
         let [idCounter, resObject] = ['0.0.1', {}];
-        let textList = this.result.split(/\n/g);
+        const res = this.result;
+        let textList = res.split(/\n/g);
         resObject['0'] = {
           document: file.name,
         };
@@ -122,12 +127,43 @@ const parseFile = (f) => {
             text: text.trim()
           }
         });
-        resolve(resObject);
+        resolve(resObject); 
       }
-    };
-  });
+    })
+  }
 };
+
+const combineSectionToDocument = docList => {
+  const combineResult = [];
+  for (let i in docList) {
+    const cur = docList[i];
+    if (cur.belongDocument) {
+      let findFlag = false;
+      for (let ti in cur.text) {
+        const t = cur.text[ti];
+        t.meta.section = cur.title;
+      }
+      for (let j in combineResult) {
+        const res = combineResult[j];
+        if (res.belongDocument === cur.belongDocument) {
+          res.text = res.text.concat(cur.text);
+          findFlag = true;
+          break;
+        }
+      }
+      if (!findFlag) {
+        cur.title = cur.belongDocument;
+        combineResult.push(cur);
+      }
+    } else {
+      combineResult.push(cur);
+    }
+  }
+  console.log(combineResult)
+  return combineResult;
+}
 
 export {
   parseFile,
+  combineSectionToDocument
 }

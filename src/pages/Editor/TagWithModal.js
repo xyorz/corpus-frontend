@@ -16,7 +16,7 @@ defaultInitial.color = colors;
 function TagWithModal(props) {
   const [visible, setVisible] = useState(false);
   const [detailVisible, setDetailVisible] = useState(false);
-  const {tag, setTag, delTag, removable, form} = props;
+  const {tag, setTag, delTag, removable, form, editable=true} = props;
   let dt = null;
   if (tag.detail && typeof tag.detail === 'string') {
     dt = JSON.parse(tag.detail);
@@ -59,6 +59,9 @@ function TagWithModal(props) {
   if (tag.color && !initial.color.includes(tag.color.toUpperCase())) {
     initial.color.push(tag.color.toUpperCase());
   }
+  if (!editable && !tag.author) {
+    return null;
+  }
   return (
     <>
       <Tag 
@@ -94,6 +97,7 @@ function TagWithModal(props) {
               initialValue: tag.author || ''
             })(
               <Input
+                disabled={!editable}
                 suffix={<span style={{ color: 'rgba(0,0,0,.25)', fontSize: '14px' }}>作者</span>}
                 placeholder="请输入作者"
               />
@@ -119,6 +123,7 @@ function TagWithModal(props) {
             })(
               <Select
                 showSearch
+                disabled={!editable}
                 notFoundContent={''}
                 suffixIcon={<span style={{ color: 'rgba(0,0,0,.25)', fontSize: '14px' }}>朝代</span>}
                 placeholder='请选择朝代'
@@ -145,6 +150,7 @@ function TagWithModal(props) {
             })(
               <Select
                 showSearch
+                disabled={!editable}
                 notFoundContent={''}
                 suffixIcon={<span style={{ color: 'rgba(0,0,0,.25)', fontSize: '14px' }}>译体</span>}
                 placeholder='请选择译体'
@@ -171,6 +177,7 @@ function TagWithModal(props) {
             })(
               <Select
                 showSearch
+                disabled={!editable}
                 notFoundContent={''}
                 suffixIcon={<span style={{ color: 'rgba(0,0,0,.25)', fontSize: '14px' }}>地域</span>}
                 placeholder='请选择地域'

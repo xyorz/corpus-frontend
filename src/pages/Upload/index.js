@@ -1,15 +1,21 @@
 import React, {useState, useEffect, useRef} from 'react'
-import {Table, Button, message, Modal, Spin} from 'antd'
+import {Table, Button, message, Modal, Select} from 'antd'
+import { DndProvider } from 'react-dnd';
+import HTML5Backend from 'react-dnd-html5-backend';
 import {Link, useHistory} from 'react-router-dom'
 import API from '../../API'
-import {parseFile} from './util'
+import {parseFile, combineSectionToDocument} from './util'
 import {parseText, generateTextToUpdate} from '../Editor/util'
 import FileDragger from './FileDragger'
+import DocumentEditModal from './DocumentEditModal'
+import DragableRow from './DragableRow'
 import Tags from '../Editor/Tags'
 import TagWithModal from '../Editor/TagWithModal'
 import {useDispatch, useSelector} from 'react-redux'
-import {PUSH_DOC_INFO_LIST, SET_DOC_INFO_LIST, DEL_DOC_INFO_LIST} from '../../redux/actionTypes'
+import {PUSH_DOC_INFO_LIST, SET_DOC_INFO_LIST, DEL_DOC_INFO_LIST, RESET_DOC_INFO_LIST} from '../../redux/actionTypes'
 import './upload.css'
+
+const { Option } = Select;
 
 const columns = [
   {
@@ -28,6 +34,11 @@ const columns = [
     align: 'center',
     title: '未定义标签',
     dataIndex: 'tagsRender'
+  },
+  {
+    align: 'center',
+    title: '所属文档',
+    dataIndex: 'belongDocument'
   }
 ];
 
@@ -64,6 +75,9 @@ function Upload(props) {
   const [globalTags, setGlobalTags] = useState([]);
   const [enableGlobalTags, setEnableGlobalTags] = useState(false);
   const [presets, setPresets] = useState(null);
+  const [encoding, setEncoding] = useState("utf-8")
+  const [docEditModalVisible, setDocEditModalVisible] = useState(false);
+  const [selectedDocId, setSelectedDocId] = useState([]);
 
   useEffect(() => {
     API.post('/corpus/authors_info/').then((data) => {
@@ -87,13 +101,15 @@ function Upload(props) {
 
   let dataSource = [];
   const setTag = () => {
-    dispatch({
-      type: SET_DOC_INFO_LIST,
-      payload: {
-        index: 0,
-        docInfo: storedDocInfoList[0]
-      }
-    })
+    if (storedDocInfoList[0]) {
+      dispatch({
+        type: SET_DOC_INFO_LIST,
+        payload: {
+          index: 0,
+          docInfo: storedDocInfoList[0]
+        }
+      })
+    }
   };
   storedDocInfoList.forEach((docInfo, index) => {
     dataSource.push({
@@ -120,12 +136,13 @@ function Upload(props) {
             return tagRenderList.concat(tagRender)
           }, [])}
         </>
-      )
+      ),
+      belongDocument: docInfo.belongDocument
     })
   });
 
   function handleFileSelect(file) {
-    parseFile(file).then((resObj) => {
+    parseFile(file, encoding).then((resObj) => {
       const parseResult = parseText(resObj);
       dispatch({
         type: PUSH_DOC_INFO_LIST,
@@ -173,12 +190,16 @@ function Upload(props) {
     }
     // TODO: 批量调接口插入
     const requestList = [];
-    docInfoList.forEach(docInfo => {
-      const parseResult = generateTextToUpdate(docInfo.text, docInfo.title, 0);
+    const combineRes = combineSectionToDocument(docInfoList);
+    combineRes.forEach(res => {
+      const parseResult = generateTextToUpdate(res.text, res.title, 0);
       requestList.push(API.post('/corpus/insert/', parseResult));
     });
     Promise.all(requestList).then(() => {
       message.success('上传成功!');
+      dispatch({
+        type: RESET_DOC_INFO_LIST
+      })
       history.push('/app/manage');
     })
   }
@@ -192,10 +213,51 @@ function Upload(props) {
       message.success('删除成功');
     }
   }
+
+  const rowSelection = {
+    onChange: selectedRowKeys => {setSelectedDocId(selectedRowKeys.map(key => parseInt(key))); console.log(selectedRowKeys)}
+  }
+
+  const onDocumentBelongSubmit = docBelong => {
+    setDocEditModalVisible(false);
+    const docInfoList = storedDocInfoList.slice();
+    for (let i in docInfoList) {
+      if (selectedDocId.includes(parseInt(i))) {
+        console.log(i, docInfoList[i])
+        docInfoList[i].belongDocument = docBelong;
+        dispatch({
+          type: SET_DOC_INFO_LIST,
+          payload: {...docInfoList[i]}
+        })
+      }
+    }
+  }
+
+  const tableComponents = {
+    body: {row: DragableRow}
+  }
+
+  const moveRow = (dragIndex, hoverIndex) => {
+    const dragRow = storedDocInfoList[dragIndex];
+    storedDocInfoList.splice(dragIndex, 1);
+    storedDocInfoList.splice(hoverIndex, 0, dragRow);
+    dispatch({
+      type: SET_DOC_INFO_LIST,
+      payload: {
+        index: 0,
+        docInfo: storedDocInfoList[0]
+      }
+    });
+  }
  
   return (
     <div>
       <div className='tableHeader'>
+        <DocumentEditModal 
+          visible={docEditModalVisible} 
+          onSubmit={onDocumentBelongSubmit}
+          onCancel={() => setDocEditModalVisible(false)}
+        />
         <FileDragger
           onSelectFile={handleFileSelect}
           className='fileDragger'
@@ -219,19 +281,41 @@ function Upload(props) {
             setTags={setGlobalTags}
           />
         </div>
-      
       </div>
-      <Table 
-        columns={columns} 
-        dataSource={dataSource} 
-        rowKey={(data) => data.id} 
-      />
-      <Button 
-        style={{position: 'relative', left: '90%', marginTop: '10px'}}
-        onClick={handleSubmit}
-      >
-        提交
-      </Button>
+      <DndProvider backend={HTML5Backend}>
+        <Table 
+          columns={columns} 
+          dataSource={dataSource} 
+          rowKey={(data) => data.id}
+          rowSelection={rowSelection}
+          pagination={false}
+          components={tableComponents}
+          onRow={(record, index) => ({
+            index,
+            moveRow
+          })}
+          title={() => (
+            <div style={{display: 'flex', justifyContent: 'flex-end'}}>
+              <Select placeholder="选择编码" onChange={setEncoding} style={{marginRight: '10px', minWidth: '120px'}}>
+                <Option value="utf-8">utf-8</Option>
+                <Option value="gb2312">gb2312</Option>
+              </Select>
+              <Button 
+                onClick={() => setDocEditModalVisible(true)}
+                style={{marginRight: '10px'}}
+              >
+                选择所属文档
+              </Button>
+              <Button 
+                type="primary"
+                onClick={handleSubmit}
+              >
+                提交
+              </Button>
+            </div>
+          )} 
+        />
+      </DndProvider>
     </div>
   )
 }

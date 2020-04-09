@@ -5,6 +5,7 @@ import {tagItems} from '../../util/config'
 const eqItems = {
   tag: true,
   meta: {
+    section: true
     // paraEnd: true,
   }
 }
@@ -55,6 +56,8 @@ function parseText(textJSON) {
         if (textObj[i].zhujie) {
           zhujie = JSON.parse(textObj[i].zhujie);
         }
+        // console.log(textObj[i])
+        if (!textObj[i].text) textObj[i].text = '';
         textObj[i].text.split('').forEach((t, index) => {
           const curIndex = lenCount + index;
           let curZhujie = null;
@@ -102,6 +105,7 @@ function generateTextToUpdate(textObj, title = '', documentId = 0) {
   const getCurId = () => idArr.join('.');
   let offsetCount = 0;
   textObj = combineTextObj(textObj, eqItems, true);
+  resObj[documentId] = {document: title, sections: []};
   textObj.forEach((para) => {
     idArr[1] ++;
     idArr[2] = 0;
@@ -110,6 +114,10 @@ function generateTextToUpdate(textObj, title = '', documentId = 0) {
       offsetCount += text.text.length;
       const curId = getCurId();
       resObj[curId] = {document: title};
+      if (text.meta.section) {
+        if (!resObj[documentId].sections.includes(text.meta.section)) resObj[documentId].sections.push(text.meta.section);
+        resObj[curId].section = text.meta.section;
+      }
       resObj[curId].text = text.text;
       for (let tagKey of Object.keys(text.tag)) {
         if (tagItems.includes(tagKey)) {
@@ -127,7 +135,8 @@ function generateTextToUpdate(textObj, title = '', documentId = 0) {
       }
     });
   });
-  resObj[documentId] = {document: title};
+  resObj[documentId].sections = JSON.stringify({list: resObj[documentId].sections});
+  console.log(resObj[documentId])
   return resObj;
 }
 

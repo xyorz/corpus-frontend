@@ -48,7 +48,8 @@ function Editor() {
     (urlParams[1] === 'local'
       ? [null, urlParams[0]]
       : [urlParams[0], null]
-  ))()
+  ))();
+  const [enableEdit, setEnableEdit] = useState(true);
   const localDocInfo = useSelector(state => state.storedDocInfoList[localId]);
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
@@ -69,18 +70,28 @@ function Editor() {
     API.post('/corpus/authors_info/').then((data) => {
       let initialTags = data.data.list;
       if (remoteId && parseInt(remoteId)) {
-        API.post('/corpus/doc/', {id: remoteId}).then((data) => {
-          console.log(JSON.stringify(data.data.doc))
+        setEnableEdit(false);
+        let url, params;
+        /section=(.+)\&?/.test(window.location.hash);
+        const section = RegExp.$1;
+        if (!section) {
+          url = '/corpus/doc/';
+          params = {id: remoteId};
+        } else {
+          url = '/corpus/get_section/';
+          params = {id: remoteId.split('?')[0], section: decodeURI(section)}
+        }
+        API.post(url, params).then((data) => {
           const parseResult = parseText(data.data.doc);
           let tagsToAdd = parseResult.tags;
-          initialTags = [...initialTags].filter((it) => {
-            return !tagsToAdd.some((ta) => ta.color.toUpperCase() === it.color.toUpperCase())
-          })
-          initialTags = new Set(initialTags.concat(tagsToAdd));
+          // initialTags = [...initialTags].filter((it) => {
+          //   return !tagsToAdd.some((ta) => ta.color.toUpperCase() === it.color.toUpperCase())
+          // })
+          // initialTags = new Set(initialTags.concat(tagsToAdd));
           textAPI.insertText(0, parseResult.text);
           setTextTitle(parseResult.title);
           setTitleInputVisible(false);
-          setTags(initialTags);
+          setTags(tagsToAdd);
         }).catch((e) => {
           // TODO: handle error
           console.log(e)
@@ -262,6 +273,43 @@ function Editor() {
     return <Spin />
   }
   const textCombine = combineTextObj(text, eqItems);
+  // 只读
+  if (!enableEdit) {
+    return (
+      <div className="textContainer">
+        <div className="textBox">
+          <div className="textTitle" >
+            <span>
+              {textTitle}
+            </span>
+          </div>
+          <Tags tags={tags} setTags={setTags} editable={false} />
+          <div className="textContent">
+            {textCombine.map((para, index) => (
+              <div key={index} className="para">
+                {para.map((t) => (
+                  <React.Fragment key={t.meta.hash}>  
+                    {t.meta.cursor && offset.startOrEnd !== 'end' && <span className="cursor"></span>}
+                    <span 
+                      style={t.meta.selected? Object.assign({color: t.tag.color}, selectedTextStyle): {color: t.tag.color}}
+                      className={`text`}
+                    >
+                      {t.text}
+                    </span>
+                    {t.meta.zhujie? (
+                      <Tooltip title={t.meta.zhujie}>
+                        <span>[*]</span>
+                      </Tooltip>
+                    ): ""}
+                  </React.Fragment>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
   return (
     <div 
       className="textContainer" 

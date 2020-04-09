@@ -16,7 +16,7 @@ function Tags(props) {
         setPresets(result);
       })
   }, []);
-  const {tags, setTags, removable} = props;
+  const {tags, setTags, removable, editable} = props;
   function setTag() {
     setTags(new Set(tags));
   }
@@ -38,11 +38,12 @@ function Tags(props) {
             setTag={setTag} 
             delTag={delTag} 
             initial={presets} 
-            removable={removable} 
+            removable={removable}
+            editable={editable}
             key={tag.id? tag.id: index + 3154}
           />
         ))}
-        <TagWithModal tag={{}} setTag={addTag} initial={presets} />
+        <TagWithModal tag={{}} setTag={addTag} initial={presets} editable={editable} />
       </div>
     </div>
   )
