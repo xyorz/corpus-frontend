@@ -57,7 +57,7 @@ function parseText(textJSON) {
           zhujie = JSON.parse(textObj[i].zhujie);
         }
         // console.log(textObj[i])
-        if (!textObj[i].text) textObj[i].text = '';
+        if (!textObj[i].text) textObj[i].text = ' ';
         textObj[i].text.split('').forEach((t, index) => {
           const curIndex = lenCount + index;
           let curZhujie = null;

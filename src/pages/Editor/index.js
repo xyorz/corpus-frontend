@@ -182,6 +182,10 @@ function Editor() {
           })
         }
         break;
+      case 'Enter':
+        textAPI.setTextMeta(offset.startOffset-1, offset.startOffset, {paraEnd: true});
+        textAPI.replaceText(offset.startOffset, offset.endOffset, []);
+        break;
       // ctrl + c
       case 'c':
         if (ctrlKey) {
@@ -230,7 +234,8 @@ function Editor() {
       case 'ArrowDown':
         event.preventDefault();
         break;
-    }
+    } // 键盘事件end
+    console.log(key)
   }
   const commitText = () => {
     if (remoteId || !localId) {
@@ -398,17 +403,17 @@ function Editor() {
               {para.map((t) => (
                 <React.Fragment key={t.meta.hash}>  
                   {t.meta.cursor && offset.startOrEnd !== 'end' && <span className="cursor"></span>}
+                  {t.meta.zhujie? (
+                    <Tooltip title={t.meta.zhujie}>
+                      <span onClick={() => {clickZhujie(t.meta.zhujie); setZhujieIndex(t.meta.index)}}>[*]</span>
+                    </Tooltip>
+                  ): ""}
                   <span 
                     style={t.meta.selected? Object.assign({color: t.tag.color}, selectedTextStyle): {color: t.tag.color}}
                     className={`text`}
                   >
                     {t.text}
                   </span>
-                  {t.meta.zhujie? (
-                    <Tooltip title={t.meta.zhujie}>
-                      <span onClick={() => {clickZhujie(t.meta.zhujie); setZhujieIndex(t.meta.index)}}>[*]</span>
-                    </Tooltip>
-                  ): ""}
                 </React.Fragment>
               ))}
             </div>

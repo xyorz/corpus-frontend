@@ -33,7 +33,7 @@ function Manage(props) {
     const btList = Array.from(document.querySelectorAll(".ant-table-row-expand-icon.ant-table-row-collapsed"));
     for (let i in dataSource) {
       if (!dataSource[i].sections || dataSource[i].sections.length === 0) {
-        btList[i].style.visibility = 'hidden';
+        btList[i] && (btList[i].style.visibility = 'hidden');
       }
     }
   }, [dataSource]);
@@ -86,9 +86,9 @@ function Manage(props) {
   dataSource.forEach(data => {
     data.action = (
       <>
-        <Link to={`/app/editor/remote/${data.id}`}>
+        {/* <Link to={`/app/editor/remote/${data.id}`}>
           <Button>浏览</Button>
-        </Link>
+        </Link> */}
         <Button 
           style={{marginLeft: '10px'}}
           onClick={() => deleteDoc(data.id)}
