@@ -129,7 +129,7 @@ function Upload(props) {
           {docInfo.tags.reduce((tagRenderList, tag, index) => {
             const tagRender = <TagWithModal tag={tag} setTag={setTag} key={index} initial={presets} />;
             if (enableGlobalTags && [...globalTags].some((gt) => {
-              return gt.color.toUpperCase() === tag.color.toUpperCase();
+              return !tag.author && gt.color.toUpperCase() === tag.color.toUpperCase();
             })) {
               return tagRenderList;
             }

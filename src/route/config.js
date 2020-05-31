@@ -30,12 +30,13 @@ let menuConfig = [
     title: '文件上传',
     icon: 'upload',
     keepAlive: true
-  }, {
-    path: '/app/download',
-    component: pages.DownLoad,
-    title: '下载使用文档',
-    icon: 'download'
-  }
+  }, 
+  // {
+  //   path: '/app/download',
+  //   component: pages.DownLoad,
+  //   title: '下载使用文档',
+  //   icon: 'download'
+  // }
 ];
 
 // 其他路由

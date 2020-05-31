@@ -156,6 +156,10 @@ const combineSectionToDocument = docList => {
         combineResult.push(cur);
       }
     } else {
+      for (let ti in cur.text) {
+        const t = cur.text[ti];
+        t.meta.section = cur.title;
+      }
       combineResult.push(cur);
     }
   }

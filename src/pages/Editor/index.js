@@ -2,6 +2,7 @@ import React, {useState, useEffect, useRef} from 'react'
 import {useHistory} from 'react-router-dom'
 import {Spin, Button, Input, Tooltip, message} from 'antd'
 import {useSelector, useDispatch} from 'react-redux'
+import tinyColor from 'tinycolor2'
 import API from '../../API'
 import Tags from './Tags'
 import TagSelector from './TagSelector'
@@ -234,6 +235,22 @@ function Editor() {
       case 'ArrowDown':
         event.preventDefault();
         break;
+      case 'ArrowRight':
+        textAPI.setTextMeta(offset.startOffset-1, offset.endOffset+1, {cursor: false});
+        textAPI.setTextMeta(offset.endOffset+1, offset.endOffset+2, {cursor: true});
+        setOffset({
+          startOffset: offset.endOffset + 1,
+          endOffset: offset.endOffset + 1
+        })
+        break;
+      case 'ArrowLeft':
+        textAPI.setTextMeta(offset.startOffset-1, offset.endOffset+1, {cursor: false});
+        textAPI.setTextMeta(offset.endOffset-1, offset.endOffset, {cursor: true});
+        setOffset({
+          startOffset: offset.endOffset - 1,
+          endOffset: offset.endOffset - 1
+        })
+        break;
     } // 键盘事件end
     console.log(key)
   }
@@ -403,7 +420,7 @@ function Editor() {
               {para.map((t) => (
                 <React.Fragment key={t.meta.hash}>  
                   {t.meta.cursor && offset.startOrEnd !== 'end' && <span className="cursor"></span>}
-                  {t.meta.zhujie? (
+                  {t.meta.zhujie && !enableEdit? (
                     <Tooltip title={t.meta.zhujie}>
                       <span onClick={() => {clickZhujie(t.meta.zhujie); setZhujieIndex(t.meta.index)}}>[*]</span>
                     </Tooltip>
@@ -414,6 +431,12 @@ function Editor() {
                   >
                     {t.text}
                   </span>
+                  {/* 编辑错位了，临时修复 */}
+                  {t.meta.zhujie && enableEdit? (
+                    <Tooltip title={t.meta.zhujie}>
+                      <span onClick={() => {clickZhujie(t.meta.zhujie); setZhujieIndex(t.meta.index)}}>[*]</span>
+                    </Tooltip>
+                  ): ""}
                 </React.Fragment>
               ))}
             </div>
@@ -444,7 +467,8 @@ function Editor() {
               t.tag = color2Tag[t.tagColor.toUpperCase()];
             } else {
               for(let tag of tags) {
-                if(tag.color && tag.color.toUpperCase() === t.tagColor.toUpperCase()) {
+                console.log(t.tagColor, tag.color)
+                if(tag.color && tinyColor(tag.color).toHexString() === tinyColor(t.tagColor).toHexString()) {
                   t.tag = tag;
                   color2Tag[tag.color.toUpperCase()] = tag;
                   break;
